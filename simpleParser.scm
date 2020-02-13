@@ -1,6 +1,6 @@
 ; If you are not using racket, comment these two lines, uncomment the (load "lex.scm") line and comment the (require "lex.scm") line
-;#lang racket
-;(provide (all-defined-out))
+; #lang racket
+; (provide (all-defined-out))
 
 ; A simple parser for a Java-ish language
 ; EECS 345: Programming Language Concepts
@@ -15,7 +15,7 @@
 ; The return value is a parse tree in list format
 
 (load "lex.scm")
-;(require "lex.rkt")
+; (require "lex.rkt")
 
 (define parser
   (lambda (filename)
