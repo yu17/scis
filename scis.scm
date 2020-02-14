@@ -327,8 +327,7 @@
 
 
 
-;Evaluate while statement
-;Compute the loop recursively
+;Main Interpretation Function
 (define interpret
 	(lambda (expr state)
 		(cond
