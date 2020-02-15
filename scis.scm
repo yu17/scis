@@ -83,8 +83,8 @@
 (define eval_sub
 	(lambda (operands state)
 		(cond
-			((eval_needexpan? (car operands)) (eval_sub (list (car (eval_auto (car operands) state)) (cadr operands)) (cadr (eval_auto (car operands) state))))
-			((null? (cdr operands)) (- (car operands)))
+			((eval_needexpan? (car operands)) (eval_sub (append (list (car (eval_auto (car operands) state))) (cdr operands)) (cadr (eval_auto (car operands) state))))
+			((null? (cdr operands)) (list (- (car operands)) state))
 			((eval_needexpan? (cadr operands)) (eval_sub (list (car operands) (car (eval_auto (cadr operands) state))) (cadr (eval_auto (cadr operands) state))))
 			((not (and (number? (car operands)) (number? (cadr operands)))) (error "Subtracting non-number values!"))
 			(else (list (- (car operands) (cadr operands)) state))
@@ -239,7 +239,7 @@
 			((eval_needexpan? (car operands)) (eval_not (list (car (eval_auto (car operands) state))) (cadr (eval_auto (car operands) state))))
 			((number? (car operands)) (list (equal? (car operands) 0) state))
 			((not (boolean? (car operands))) (error (string-append "Type error. Boolean expected but " (symbol->string (car operands)) " found.")))
-			(else (not (car operands)))
+			(else (list (not (car operands)) state))
 		)
 	))
 
@@ -263,7 +263,9 @@
 			((number? expr) (list expr state))
 			((boolean? expr) (list expr state))
 			((string? expr) (list expr state))
-			((not (list? expr)) (list SL_get(expr) state))
+			((equal? expr 'true) (list #t state))
+			((equal? expr 'false) (list #f state))
+			((not (list? expr)) (list (SL_get expr state) state))
 			((equal? (car expr) '+) (eval_add (cdr expr) state))
 			((equal? (car expr) '-) (eval_sub (cdr expr) state))
 			((equal? (car expr) '*) (eval_multi (cdr expr) state))
@@ -279,18 +281,31 @@
 			((equal? (car expr) '<=) (eval_le (cdr expr) state))
 			((equal? (car expr) '>=) (eval_ge (cdr expr) state))
 			((equal? (car expr) '=) (eval_assign (cadr expr) (caddr expr) state))
-			(else (error "Invalid operator."))
+			(else (error (string-append "Invalid operator " (symbol->string (car expr)) ".")))
 		)
 	))
+
+;Evaluate var statement
+;Returns the result state with new variable declared
+(define eval_var
+	(lambda (expr state)
+		(cond
+			((null? (cdr expr)) (SL_add (list (car expr) '()) state))
+			((eval_needexpan? (cadr expr)) (eval_var (list (car expr) (car (eval_auto (cadr expr) state))) (cadr (eval_auto (cadr expr) state))))
+			(else (SL_add (list (car expr) (cadr expr)) state))
+		)
+	))
+
 
 ;Evaluate if statement
 ;Returns the result state of the corresponding branch
 (define eval_if
-	(lambda (condition expr_true expr_false state)
+	(lambda (condition expr state)
 		(cond
-			((eval_needexpan? condition) (eval_if (car (eval_auto condition state)) expr_true expr_false (cadr (eval_auto condition state))))
-			(condition (eval_auto expr_true state))
-			(else (eval_auto expr_false state))
+			((eval_needexpan? condition) (eval_if (car (eval_auto condition state)) expr (cadr (eval_auto condition state))))
+			(condition (interpret* (car expr) state))
+			((and (not condition) (not (null? (cdr expr))))  (interpret* (cadr expr) state))
+			(else state)
 		)
 	))
 
@@ -300,7 +315,7 @@
 	(lambda (condition condition_evaluation_result expr state)
 		(cond
 			((eval_needexpan? condition_evaluation_result) (eval_loop condition (car (eval_auto condition state)) expr (cadr (eval_auto condition state))))
-			(condition_evaluation_result (eval_loop condition condition expr (cadr (eval_auto expr state))))
+			(condition_evaluation_result (eval_loop condition condition expr (interpret* expr state)))
 			(else state)
 		)
 	))
@@ -309,9 +324,9 @@
 ;Returns "True" for #t and "False" for #f
 (define return_boolean
 	(lambda (bool)
-		(if (bool)
-			"True"
-			"False"
+		(if bool
+			"true"
+			"false"
 		)
 	))
 
@@ -328,16 +343,23 @@
 
 
 ;Main Interpretation Function
-(define interpret
+(define interpret*
 	(lambda (expr state)
 		(cond
 			((null? expr) state)
-			((null? (car expr)) (interpret (cdr expr) state))
-			((list? (car expr) (interpret (cdr expr) (interpret (car expr) state))))
-			((equal? (car expr) 'var) (SL_add (list (cadr expr) '()) state))
-			((equal? (car expr) 'if) (eval_if (cadr expr) (caddr expr) (cadddr expr) state))
+			((null? (car expr)) (interpret* (cdr expr) state))
+			((list? (car expr)) (interpret* (cdr expr) (interpret* (car expr) state)))
+			((equal? (car expr) 'var) (eval_var (cdr expr) state))
+			((equal? (car expr) 'if) (eval_if (cadr expr) (cddr expr) state))
 			((equal? (car expr) 'while) (eval_loop (cadr expr) (cadr expr) (caddr expr) state))
-			((equal? (car expr) 'return) (return (car expr) state))
-			(else (cadr (eval_auto (car expr) state)))
+			((equal? (car expr) 'return) (return (cadr expr) state))
+			(else (cadr (eval_auto expr state)))
 		)
+	))
+
+(load "simpleParser.scm")
+
+(define interpret
+	(lambda (fname)
+		(interpret* (parser fname) '(() ()))
 	))
