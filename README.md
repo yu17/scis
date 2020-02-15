@@ -4,6 +4,7 @@ An Interpreter for a C-like language implemented in Scheme.
 
 All features, including the optional features, are implemented.<br/>
 Features:<br/>
+Variables types: integer, boolean, string<br/>
 Variables use-before-declaration check<br/>
 Variables use-before-initialization check<br/>
 Variables type check<br/>

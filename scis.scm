@@ -1,6 +1,8 @@
 ; StateList functions
+; Following functions of which the names are prefixed with "SL" are the state operation functions.
 
 ;Check if a variable is declared
+;Takes a variable name and the state
 ;Returns #t if the varname is found in state and #f otherwise
 (define SL_check
 	(lambda (varname state)
@@ -12,6 +14,7 @@
 	))
 
 ;Add a new pair of variable into the state list
+;Takes a pair of variable name and value and the state
 ;Returns a new state with varpair concatenated at the head
 (define SL_add
 	(lambda (varpair state)
@@ -23,6 +26,7 @@
 	))
 
 ;Remove a variable from the state list
+;Takes a variable name and the state
 ;Returns a new state with the varname entry removed
 (define SL_rm
 	(lambda (varname state)
@@ -34,6 +38,7 @@
 	))
 
 ;Get the variable value from the state list
+;Takes a variable name and the state
 ;Returns the corresponding value for varname
 (define SL_get
 	(lambda (varname state)
@@ -46,6 +51,7 @@
 	))
 
 ;Assign value to a variable
+;Takes a pair of variable name and value and the state
 ;Returns a new state with the corresponding value of the varpair replaced by the new varpair
 (define SL_set
 	(lambda (varpair state)
@@ -57,17 +63,20 @@
 	))
 
 
-;Arithmatic and Logic Evaluation Functions
+;Following functions of which the names are prefixed with "eval" are the value evaluation functions.
 
 ;Check if the expression needs expansion
-;Return #t if and only if the expression is non of number, boolean, or string.
+;Takes an expression
+;Returns #t if and only if the expression is non of number, boolean, or string.
 (define eval_needexpan?
 	(lambda (expr)
 		(not (or (number? expr) (boolean? expr) (string? expr)))
 	))
 
 ;Evaluate addition
-;Returns the result value and state
+;Takes a list of two operands and the state
+;Evaluates the operands if necessary
+;Returns the sum of two operands and the new state
 (define eval_add
 	(lambda (operands state)
 		(cond
@@ -79,7 +88,9 @@
 	))
 
 ;Evaluate subtraction
-;Returns the result value and state
+;Takes a list of one or two operands and the state
+;Evaluates the operands if necessary
+;Returns the differences of two operands (or the negation if there's only one) and the new state
 (define eval_sub
 	(lambda (operands state)
 		(cond
@@ -92,7 +103,9 @@
 	))
 
 ;Evaluate multiplication
-;Returns the result value and state
+;Takes a list of two operands and the state
+;Evaluates the operands if necessary
+;Returns the multiplication of two operands and the new state
 (define eval_multi
 	(lambda (operands state)
 		(cond
@@ -104,7 +117,9 @@
 	))
 
 ;Evaluate division
-;Returns the result value and state
+;Takes a list of two operands and the state
+;Evaluates the operands if necessary
+;Returns the quotient of two operands and the new state
 (define eval_div
 	(lambda (operands state)
 		(cond
@@ -116,7 +131,9 @@
 	))
 
 ;Evaluate modulation
-;Returns the result value and state
+;Takes a list of two operands and the state
+;Evaluates the operands if necessary
+;Returns the remainder of two operands and the new state
 (define eval_mod
 	(lambda (operands state)
 		(cond
@@ -128,7 +145,9 @@
 	))
 
 ;Evaluate equal comparison
-;Returns the result value and state
+;Takes a list of two operands and the state
+;Evaluates the operands if necessary
+;Returns a boolean value and the new state
 (define eval_eq
 	(lambda (operands state)
 		(cond
@@ -140,7 +159,9 @@
 	))
 
 ;Evaluate non-equal comparison
-;Returns the result value and state
+;Takes a list of two operands and the state
+;Evaluates the operands if necessary
+;Returns a boolean value and the new state
 (define eval_neq
 	(lambda (operands state)
 		(cond
@@ -152,7 +173,9 @@
 	))
 
 ;Evaluate less-than comparison
-;Returns the result value and state
+;Takes a list of two operands and the state
+;Evaluates the operands if necessary
+;Returns a boolean value and the new state
 (define eval_lt
 	(lambda (operands state)
 		(cond
@@ -164,7 +187,9 @@
 	))
 
 ;Evaluate less-than-or-equal-to comparison
-;Returns the result value and state
+;Takes a list of two operands and the state
+;Evaluates the operands if necessary
+;Returns a boolean value and the new state
 (define eval_le
 	(lambda (operands state)
 		(cond
@@ -176,7 +201,9 @@
 	))
 
 ;Evaluate greater-than comparison
-;Returns the result value and state
+;Takes a list of two operands and the state
+;Evaluates the operands if necessary
+;Returns a boolean value and the new state
 (define eval_gt
 	(lambda (operands state)
 		(cond
@@ -188,7 +215,9 @@
 	))
 
 ;Evaluate greater-than-or-equal-to comparison
-;Returns the result value and state
+;Takes a list of two operands and the state
+;Evaluates the operands if necessary
+;Returns a boolean value and the new state
 (define eval_ge
 	(lambda (operands state)
 		(cond
@@ -199,8 +228,11 @@
 		)
 	))
 
-;Evaluate logical and
-;Return the result value in scheme #t or #f and the new state with possible assignment handled
+;Evaluate logic and
+;Takes a list of two operands and the state
+;Evaluates the operands if necessary
+;Returns the result value in scheme #t or #f and the new state with possible assignment handled
+;The second operand would not be evaluated if the and operation is short-circuited by the first operand
 (define eval_and
 	(lambda (operands state)
 		(cond
@@ -215,8 +247,11 @@
 		)
 	))
 
-;Evaluate logical or
-;Return the result value in scheme #t or #f and the new state with possible assignment handled
+;Evaluate logic or
+;Takes a list of two operands and the state
+;Evaluates the operands if necessary
+;Returns the result value in scheme #t or #f and the new state with possible assignment handled
+;The second operand would not be evaluated if the and operation is short-circuited by the first operand
 (define eval_or
 	(lambda (operands state)
 		(cond
@@ -231,8 +266,10 @@
 		)
 	))
 
-;Evaluate logical not
-;Return the result value in scheme #t or #f and the new state with possible assignment handled
+;Evaluate logic not
+;Takes a list of one operand and the state
+;Evaluates the operand if necessary
+;Returns the result value in scheme #t or #f and the new state with possible assignment handled
 (define eval_not
 	(lambda (operands state)
 		(cond
@@ -244,7 +281,9 @@
 	))
 
 ;Evaluate assignment
-;Returns the value been assigned and state
+;Takes a variable name, an expression, and the state
+;Evaluates the expression if necessary
+;Returns the value been assigned and the new state
 (define eval_assign
 	(lambda (varname expr state)
 		(cond
@@ -254,7 +293,9 @@
 	))
 
 
-;Evaluate expression and distribute them to the corresponding specific handlers
+;Evaluate any expression
+;Takes an expression and the state
+;Checks the type of the expression and distributes it to the corresponding handler
 ;Returns the evaluation result and the new state with posible assignment handled
 (define eval_auto
 	(lambda (expr state)
@@ -285,43 +326,54 @@
 		)
 	))
 
-;Evaluate var statement
-;Returns the result state with new variable declared
-(define eval_var
+;Following functions of which the names are prefixed with "terp" are the state transition functions.
+
+;Interpret var statement
+;Takes a list of arguments: (variable_name expression) and the state
+;Evaluates the expression if necessary
+;Returns the new state with new variable declared
+(define terp_var
 	(lambda (expr state)
 		(cond
 			((null? (cdr expr)) (SL_add (list (car expr) '()) state))
-			((eval_needexpan? (cadr expr)) (eval_var (list (car expr) (car (eval_auto (cadr expr) state))) (cadr (eval_auto (cadr expr) state))))
+			((eval_needexpan? (cadr expr)) (terp_var (list (car expr) (car (eval_auto (cadr expr) state))) (cadr (eval_auto (cadr expr) state))))
 			(else (SL_add (list (car expr) (cadr expr)) state))
 		)
 	))
 
 
-;Evaluate if statement
-;Returns the result state of the corresponding branch
-(define eval_if
+;Interpret if statement
+;Takes a condition expression, a list of expression to be executed (either one expression for true only or two expressions for both true and false cases), and the state
+;Evaluates the expression if necessary
+;Returns the new state from the corresponding branch
+(define terp_if
 	(lambda (condition expr state)
 		(cond
-			((eval_needexpan? condition) (eval_if (car (eval_auto condition state)) expr (cadr (eval_auto condition state))))
+			((eval_needexpan? condition) (terp_if (car (eval_auto condition state)) expr (cadr (eval_auto condition state))))
 			(condition (interpret* (car expr) state))
 			((and (not condition) (not (null? (cdr expr))))  (interpret* (cadr expr) state))
 			(else state)
 		)
 	))
 
-;Evaluate while statement
-;Run loop recursively and returns the final state
-(define eval_loop
+;Interpret while-loop statement
+;Takes a condition expression, a result of evaluating the condition, an expression to be executed, and the state
+;Each iteration would be run twice:
+;For the first time, condition_evaluation_result should be the same as condition. The condition would then be evaluated and passed to the second run
+;For the second run, condition_evaluation_result should have been evaluated and would be used to determine if the loop should abort or continue.
+;Runs loop recursively and returns the final state
+(define terp_loop
 	(lambda (condition condition_evaluation_result expr state)
 		(cond
-			((eval_needexpan? condition_evaluation_result) (eval_loop condition (car (eval_auto condition state)) expr (cadr (eval_auto condition state))))
-			(condition_evaluation_result (eval_loop condition condition expr (interpret* expr state)))
+			((eval_needexpan? condition_evaluation_result) (terp_loop condition (car (eval_auto condition state)) expr (cadr (eval_auto condition state))))
+			(condition_evaluation_result (terp_loop condition condition expr (interpret* expr state)))
 			(else state)
 		)
 	))
 
 ;Convert boolean to string
-;Returns "True" for #t and "False" for #f
+;Takes a boolean
+;Returns "true" for #t and "false" for #f
 (define return_boolean
 	(lambda (bool)
 		(if bool
@@ -340,8 +392,6 @@
 		)
 	))
 
-
-
 ;Main Interpretation Function
 (define interpret*
 	(lambda (expr state)
@@ -349,16 +399,19 @@
 			((null? expr) state)
 			((null? (car expr)) (interpret* (cdr expr) state))
 			((list? (car expr)) (interpret* (cdr expr) (interpret* (car expr) state)))
-			((equal? (car expr) 'var) (eval_var (cdr expr) state))
-			((equal? (car expr) 'if) (eval_if (cadr expr) (cddr expr) state))
-			((equal? (car expr) 'while) (eval_loop (cadr expr) (cadr expr) (caddr expr) state))
+			((equal? (car expr) 'var) (terp_var (cdr expr) state))
+			((equal? (car expr) 'if) (terp_if (cadr expr) (cddr expr) state))
+			((equal? (car expr) 'while) (terp_loop (cadr expr) (cadr expr) (caddr expr) state))
 			((equal? (car expr) 'return) (return (cadr expr) state))
 			(else (cadr (eval_auto expr state)))
 		)
 	))
 
+;Load the sample parser
 (load "simpleParser.scm")
 
+;Interface Function
+;The state is initialized to '(() ()), as two empty list
 (define interpret
 	(lambda (fname)
 		(interpret* (parser fname) '(() ()))
