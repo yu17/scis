@@ -270,7 +270,7 @@
 			((equal? (car expr) '/) (eval_div (cdr expr) state))
 			((equal? (car expr) '%) (eval_mod (cdr expr) state))
 			((equal? (car expr) '&&) (eval_and (cdr expr) state))
-			((equal? (car expr) '||) (eval_or (cdr expr) state))
+			((equal? (car expr) (string->symbol "||")) (eval_or (cdr expr) state))
 			((equal? (car expr) '!) (eval_not (cdr expr) state))
 			((equal? (car expr) '==) (eval_eq (cdr expr) state))
 			((equal? (car expr) '!=) (eval_neq (cdr expr) state))
