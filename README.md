@@ -46,3 +46,8 @@ Acronym for Interpretation. State functions. Usually takes a few arguments and a
 
 ####return\_\*
 The functions that handle or present the return value.
+
+##Todos:
+
+Fix integer-to-boolean casting logic.<br/>
+Edge case tests.<br/>
