@@ -4,8 +4,24 @@ An Interpreter for a C-like language implemented in Scheme.
 
 All features, including the optional features, are implemented.
 
+## Usage:
+
+The main program file is `scis.scm`. It's a scheme flavor implementation. Requires `mit-scheme` to be installed.<br/>
+
+Save the program to `<filename>`.<br/>
+Enter the mit-scheme interactive environment. (Run mit-scheme)<br/>
+Execute the following command:<br/>
+
+(load "scis.scm")<br/>
+(interpret `<filename>`)<br/>
+
+Or, open a terminal and navigate to the folder where the program is in, and execute:<br>
+
+mit-scheme --load scis.scm --eval "(interpret `<filename>`)"
+
 #### Features:<br/>
 Variables types: integer, boolean, string<br/>
+Case-sensitive variable names (boolean literals are case-insensitive)<br/>
 Variables use-before-declaration check<br/>
 Variables use-before-initialization check<br/>
 Variables type check<br/>
@@ -16,15 +32,6 @@ Boolean operators: &&, ||, !<br/>
 Boolean operation short-circuit evaluation<br/>
 Assignment operation =<br/>
 Inline assignment (nested assignment and assignment within expression)<br/>
-
-## Usage:
-
-Save the program to `<filename>`.<br/>
-Enter the mit-scheme interactive environment. (Run mit-scheme)<br/>
-Execute the following command:<br/>
-
-(load "scis.scm")<br/>
-(interpret `<filename>`)
 
 ## About State Functions and Value Functions:
 

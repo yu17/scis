@@ -1,68 +1,3 @@
-; StateList functions
-; Following functions of which the names are prefixed with "SL" are the state operation functions.
-
-;Check if a variable is declared
-;Takes a variable name and the state
-;Returns #t if the varname is found in state and #f otherwise
-(define SL_check
-	(lambda (varname state)
-		(cond
-			((null? (car state)) #f)
-			((equal? varname (caar state)) #t)
-			(else (SL_check varname (list (cdar state) (cdadr state))))
-		)
-	))
-
-;Add a new pair of variable into the state list
-;Takes a pair of variable name and value and the state
-;Returns a new state with varpair concatenated at the head
-(define SL_add
-	(lambda (varpair state)
-		(cond
-			((SL_check (car varpair) state) (error (string-append "The variable " (symbol->string (car varpair)) " is being redefined.")))
-			((null? (car state)) (list (list (car varpair)) (cdr varpair)))
-			(else (list (append (list (car varpair)) (car state)) (append (cdr varpair) (cadr state))))
-		)
-	))
-
-;Remove a variable from the state list
-;Takes a variable name and the state
-;Returns a new state with the varname entry removed
-(define SL_rm
-	(lambda (varname state)
-		(cond
-			((null? (car state)) state)
-			((equal? varname (caar state)) (list (cdar state) (cdadr state)))
-			(else (SL_add (list (caar state) (caadr state)) (SL_rm varname (list (cdar state) (cdadr state)))))
-		)
-	))
-
-;Get the variable value from the state list
-;Takes a variable name and the state
-;Returns the corresponding value for varname
-(define SL_get
-	(lambda (varname state)
-		(cond
-			((null? (car state)) (error (string-append "The variable " (symbol->string varname) " is not declared.")))
-			((and (equal? varname (caar state)) (null? (caadr state))) (error (string-append "The variable " (symbol->string varname) " is used before initialization."))) 
-			((equal? varname (caar state)) (caadr state))
-			(else (SL_get varname (list (cdar state) (cdadr state))))
-		)
-	))
-
-;Assign value to a variable
-;Takes a pair of variable name and value and the state
-;Returns a new state with the corresponding value of the varpair replaced by the new varpair
-(define SL_set
-	(lambda (varpair state)
-		(cond
-			((null? (car state)) (error (string-append "The variable " (symbol->string (car varpair)) " is not declared.")))
-			((equal? (car varpair) (caar state)) (SL_add varpair (list (cdar state) (cdadr state))))
-			(else (SL_add (list (caar state) (caadr state)) (SL_set varpair (list (cdar state) (cdadr state)))))
-		)
-	))
-
-
 ;Following functions of which the names are prefixed with "eval" are the value evaluation functions.
 
 ;Check if the expression needs expansion
@@ -153,7 +88,6 @@
 		(cond
 			((eval_needexpan? (car operands)) (eval_eq (list (car (eval_auto (car operands) state)) (cadr operands)) (cadr (eval_auto (car operands) state))))
 			((eval_needexpan? (cadr operands)) (eval_eq (list (car operands) (car (eval_auto (cadr operands) state))) (cadr (eval_auto (cadr operands) state))))
-			((not (and (number? (car operands)) (number? (cadr operands)))) (error "Comparing non-number values!"))
 			(else (list (equal? (car operands) (cadr operands)) state))
 		)
 	))
@@ -167,7 +101,6 @@
 		(cond
 			((eval_needexpan? (car operands)) (eval_neq (list (car (eval_auto (car operands) state)) (cadr operands)) (cadr (eval_auto (car operands) state))))
 			((eval_needexpan? (cadr operands)) (eval_neq (list (car operands) (car (eval_auto (cadr operands) state))) (cadr (eval_auto (cadr operands) state))))
-			((not (and (number? (car operands)) (number? (cadr operands)))) (error "Comparing non-number values!"))
 			(else (list (not (equal? (car operands) (cadr operands))) state))
 		)
 	))
@@ -292,6 +225,23 @@
 		)
 	))
 
+;Evaluate symbols, including variable names, true/false
+;Takes an expression and the state
+;Returns the corresponding value of the expression and the state
+;Note that this function would not modify the state. It takes and returns the state only to be consistent with all the other functions.
+(define eval_symbol
+	(lambda (expr state)
+		(cond
+			((null? expr) (list '() state))
+			((number? expr) (list expr state))
+			((boolean? expr) (list expr state))
+			((string? expr) (list expr state))
+			((equal? (string-upcase (symbol->string expr)) "TRUE") (list #t state))
+			((equal? (string-upcase (symbol->string expr)) "FALSE") (list #f state))
+			(else (list (SL_get expr state) state))
+		)
+	))
+
 
 ;Evaluate any expression
 ;Takes an expression and the state
@@ -300,13 +250,13 @@
 (define eval_auto
 	(lambda (expr state)
 		(cond
-			((null? expr) (list '() state))
-			((number? expr) (list expr state))
-			((boolean? expr) (list expr state))
-			((string? expr) (list expr state))
-			((equal? expr 'true) (list #t state))
-			((equal? expr 'false) (list #f state))
-			((not (list? expr)) (list (SL_get expr state) state))
+;			((null? expr) (list '() state))
+;			((number? expr) (list expr state))
+;			((boolean? expr) (list expr state))
+;			((string? expr) (list expr state))
+;			((equal? expr 'true) (list #t state))
+;			((equal? expr 'false) (list #f state))
+			((not (list? expr)) (eval_symbol expr state))
 			((equal? (car expr) '+) (eval_add (cdr expr) state))
 			((equal? (car expr) '-) (eval_sub (cdr expr) state))
 			((equal? (car expr) '*) (eval_multi (cdr expr) state))
@@ -410,9 +360,11 @@
 ;Load the sample parser
 (load "simpleParser.scm")
 
+;Load the state operation functions
+(load "stateList.scm")
+
 ;Interface Function
-;The state is initialized to '(() ()), as two empty list
 (define interpret
 	(lambda (fname)
-		(interpret* (parser fname) '(() ()))
+		(interpret* (parser fname) (SL_init))
 	))
