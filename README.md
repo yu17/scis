@@ -6,9 +6,12 @@ All features, including the optional features, are implemented.
 
 ## Usage:
 
-The main program file is `scis.scm`. It's a scheme flavor implementation. Requires `mit-scheme` to be installed.<br/>
+The main interpreter program file is `scis.scm`. It's a scheme flavor implementation. Requires `mit-scheme` to be installed.<br/>
+The provided parser `simpleParser.scm` has been modified so as to be run under `mit-scheme`.<br/>
 
-Save the program to `<filename>`.<br/>
+To run `scis.scm`:
+
+Save the testing C program to `<filename>`.<br/>
 Enter the mit-scheme interactive environment. (Run mit-scheme)<br/>
 Execute the following command:<br/>
 

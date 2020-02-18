@@ -1,3 +1,6 @@
+;EECS 345 Interpreter Project Part 1
+;Group 1. Jiaqi Yu, Yiquan Zhu, Renjie Xi
+
 ;Following functions of which the names are prefixed with "eval" are the value evaluation functions.
 
 ;Check if the expression needs expansion
@@ -7,6 +10,11 @@
 	(lambda (expr)
 		(not (or (number? expr) (boolean? expr) (string? expr)))
 	))
+
+;The following evaluation functions, in general, follows the following procedure:
+;1. Takes a list of operands and the state
+;2. Check each of the operand if it needs expansion (i.e, it is not a literal value) and evaluate each of them and update the state accordingly if necessary. 
+;3. Perform the corresponding operation on the operands
 
 ;Evaluate addition
 ;Takes a list of two operands and the state
