@@ -32,8 +32,8 @@
 ;bool
 (define SL_check
 	(lambda (varname s_list return_b)
-		(L_check varname (car s_list) (lambda (v) (if (v)
-			(return_b v)
+		(L_check varname (car s_list) (lambda (b) (if b
+			(return_b b)
 			(SL_check varname (cdr s_list) return_b)
 		)))
 	))
@@ -41,7 +41,7 @@
 ;state,layer
 (define L_add
 	(lambda (varpair s_layer return_s)
-		(L_check (car varpair) s_layer (lambda (V) (if (v)
+		(L_check (car varpair) s_layer (lambda (b) (if b
 			(error (string-append "The variable " (symbol->string (car varpair)) " is being redefined."))
 			(return_s (list (cons (car varpair) (car s_layer)) (cons (cadr varpair) (cadr s_layer))))
 		)))
@@ -100,8 +100,9 @@
 	(lambda (varpair s_layer return_s)
 		(cond
 			((null? (car s_layer)) (return_s s_layer))
-			((equal? (car varpair) (caar s_layer)) (L_add varpair (list (cdar s_layer) (cdadr s_layer))))
-			(else (L_add (list (caar s_layer) (caadr s_layer)) (L_set varpair (list (cdar s_layer) (cdadr s_layer)))))
+			((equal? (car varpair) (caar s_layer)) (L_add varpair (list (cdar s_layer) (cdadr s_layer)) return_s))
+			(else (L_set varpair (list (cdar s_layer) (cdadr s_layer)) (lambda (s)
+				(L_add (list (caar s_layer) (caadr s_layer)) s return_s))))
 		)
 	))
 
@@ -110,11 +111,11 @@
 	(lambda (varpair s_list return_s)
 		(cond
 			((null? s_list) (error (string-append "The variable " (symbol->string (car varpair)) " is not declared.")))
-			(L_check (car varpair) (car s_list) (lambda (v1)
-				(if v1
-					(L_set varpair (car s_list) (lambda (v2) 
-						(return_s (cons v2 (cdr s_list)))))
-					(SL_set varpair (cdr s_list) (lambda (v2)
-						(return_s (cons (car s_list) v2)))))
-			)))
+			(else (L_check (car varpair) (car s_list) (lambda (b)
+				(if b
+					(L_set varpair (car s_list) (lambda (v) 
+						(return_s (cons v (cdr s_list)))))
+					(SL_set varpair (cdr s_list) (lambda (v)
+						(return_s (cons (car s_list) v)))))
+			))))
 	))

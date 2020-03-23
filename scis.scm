@@ -6,8 +6,7 @@
 	(lambda (expr state return_v)
 		(cond
 			((or (number? expr)
-				(boolean? expr)
-				(string? expr)) (return_v expr))
+				(boolean? expr)) (return_v expr))
 			((equal? (string-upcase (symbol->string expr)) "TRUE") (return_v #t))
 			((equal? (string-upcase (symbol->string expr)) "FALSE") (return_v #f))
 			(else (SL_get expr state return_v)))
@@ -17,7 +16,7 @@
 	(lambda (operands state return_v)
 		(eval_expr_auto (car operands) state (lambda (v1)
 			(intpn_expr_auto (car operands) state (lambda (s)
-				(eval_expr_auto (car operands) s (lambda (v2)
+				(eval_expr_auto (cadr operands) s (lambda (v2)
 					(if (not (and (number? v1) (number? v2)))
 						(error "Adding non-number values!")
 						(return_v (+ v1 v2)))
@@ -30,20 +29,20 @@
 			(intpn_expr_auto (car operands) state (lambda (s)
 				(cond
 					((not (number? v1)) (error "Subtracting/Negating non-number values!"))
-					((not (null? (cdr operands))) (eval_expr_auto (car operands) s (lambda (v2)
+					((not (null? (cdr operands))) (eval_expr_auto (cadr operands) s (lambda (v2)
 						(if (not (number? v2))
 							(error "Subtracting non-number values!")
 							(return_v (- v1 v2)))
 					)))
-					(return_v (- v1)))
-			))))
+					(else (return_v (- v1)))
+			)))))
 		))
 
 (define eval_expr_mult
 	(lambda (operands state return_v)
 		(eval_expr_auto (car operands) state (lambda (v1)
 			(intpn_expr_auto (car operands) state (lambda (s)
-				(eval_expr_auto (car operands) s (lambda (v2)
+				(eval_expr_auto (cadr operands) s (lambda (v2)
 					(if (not (and (number? v1) (number? v2)))
 						(error "Multiplying non-number values!")
 						(return_v (* v1 v2)))
@@ -54,7 +53,7 @@
 	(lambda (operands state return_v)
 		(eval_expr_auto (car operands) state (lambda (v1)
 			(intpn_expr_auto (car operands) state (lambda (s)
-				(eval_expr_auto (car operands) s (lambda (v2)
+				(eval_expr_auto (cadr operands) s (lambda (v2)
 					(if (not (and (number? v1) (number? v2)))
 						(error "Dividing non-number values!")
 						(return_v (quotient v1 v2)))
@@ -65,7 +64,7 @@
 	(lambda (operands state return_v)
 		(eval_expr_auto (car operands) state (lambda (v1)
 			(intpn_expr_auto (car operands) state (lambda (s)
-				(eval_expr_auto (car operands) s (lambda (v2)
+				(eval_expr_auto (cadr operands) s (lambda (v2)
 					(if (not (and (number? v1) (number? v2)))
 						(error "Dividing non-number values!")
 						(return_v (modulo v1 v2)))
@@ -78,7 +77,7 @@
 			(if (or (not v1) (equal? v1 0))
 				(return_v #f)
 				(intpn_expr_auto (car operands) state (lambda (s)
-					(eval_expr_auto (car operands) s (lambda (v2)
+					(eval_expr_auto (cadr operands) s (lambda (v2)
 						(return_v (and v2 (not (equal? v2 0))))
 					))))
 				)))
@@ -90,7 +89,7 @@
 			(if (and v1 (not (equal? v1 0)))
 				(return_v #t)
 				(intpn_expr_auto (car operands) state (lambda (s)
-					(eval_expr_auto (car operands) s (lambda (v2)
+					(eval_expr_auto (cadr operands) s (lambda (v2)
 						(return_v (not (or (not v2) (equal? v2 0))))
 					))))
 				)))
@@ -107,7 +106,7 @@
 	(lambda (operands state return_v)
 		(eval_expr_auto (car operands) state (lambda (v1)
 			(intpn_expr_auto (car operands) state (lambda (s)
-				(eval_expr_auto (car operands) s (lambda (v2)
+				(eval_expr_auto (cadr operands) s (lambda (v2)
 					(return_v (equal? v1 v2))
 				))))))
 	))
@@ -116,7 +115,7 @@
 	(lambda (operands state return_v)
 		(eval_expr_auto (car operands) state (lambda (v1)
 			(intpn_expr_auto (car operands) state (lambda (s)
-				(eval_expr_auto (car operands) s (lambda (v2)
+				(eval_expr_auto (cadr operands) s (lambda (v2)
 					(return_v (not (equal? v1 v2)))
 				))))))
 	))
@@ -125,7 +124,7 @@
 	(lambda (operands state return_v)
 		(eval_expr_auto (car operands) state (lambda (v1)
 			(intpn_expr_auto (car operands) state (lambda (s)
-				(eval_expr_auto (car operands) s (lambda (v2)
+				(eval_expr_auto (cadr operands) s (lambda (v2)
 					(if (not (and (number? v1) (number? v2)))
 						(error "Comparing non-number values!")
 						(return_v (< v1 v2)))
@@ -136,7 +135,7 @@
 	(lambda (operands state return_v)
 		(eval_expr_auto (car operands) state (lambda (v1)
 			(intpn_expr_auto (car operands) state (lambda (s)
-				(eval_expr_auto (car operands) s (lambda (v2)
+				(eval_expr_auto (cadr operands) s (lambda (v2)
 					(if (not (and (number? v1) (number? v2)))
 						(error "Comparing non-number values!")
 						(return_v (> v1 v2)))
@@ -147,7 +146,7 @@
 	(lambda (operands state return_v)
 		(eval_expr_auto (car operands) state (lambda (v1)
 			(intpn_expr_auto (car operands) state (lambda (s)
-				(eval_expr_auto (car operands) s (lambda (v2)
+				(eval_expr_auto (cadr operands) s (lambda (v2)
 					(if (not (and (number? v1) (number? v2)))
 						(error "Comparing non-number values!")
 						(return_v (<= v1 v2)))
@@ -158,7 +157,7 @@
 	(lambda (operands state return_v)
 		(eval_expr_auto (car operands) state (lambda (v1)
 			(intpn_expr_auto (car operands) state (lambda (s)
-				(eval_expr_auto (car operands) s (lambda (v2)
+				(eval_expr_auto (cadr operands) s (lambda (v2)
 					(if (not (and (number? v1) (number? v2)))
 						(error "Comparing non-number values!")
 						(return_v (>= v1 v2)))
@@ -194,7 +193,7 @@
 
 (define bool_expr_auto
 	(lambda (expr state return_b)
-		(eval_expr_auto expr state (lamdba (v)
+		(eval_expr_auto expr state (lambda (v)
 			(return_b (and v (not (equal? v 0))))
 		))
 	))
@@ -272,14 +271,17 @@
 
 (define intpn_return
 	(lambda (stmt state c-return)
-		(eval_expr_auto stmt state c-return)
+		(eval_expr_auto (car stmt) state c-return)
 	))
 
 (define intpn_begin
 	(lambda (stmt state c-return c-break c-continue c-throw return_s)
-		(SL_pushlayer state (lambda (s)
-			(intpn_stmt_auto (cdr stmt) s c-return c-break c-continue c-throw (lambda (s2)
-				SL_popLayer s2 return_s))))
+		(SL_pushLayer state (lambda (s)
+			(intpn_stmt_auto stmt s c-return c-break c-continue
+			(lambda (s2 e)
+				(SL_popLayer s2 (lambda (s3) (c-throw s3 e))))
+			(lambda (s2)
+				(SL_popLayer s2 return_s)))))
 	))
 
 (define intpn_break
@@ -297,8 +299,20 @@
 		(SL_pushLayer state (lambda (s)
 			(intpn_stmt_auto (car stmt) s c-return c-break c-continue
 				(lambda (s e)
-					(intpn_catch (cdadr stmt) s e c-return c-break c-continue c-throw (lambda (s2)
-						(intpn_finally (cdaddr stmt) s2 c-return c-break c-continue c-throw return_s))))
+					(if (not (null? (cadr stmt)))
+						(intpn_catch (cdadr stmt) s e c-return c-break c-continue c-throw (lambda (s2)
+							(if (not (null? (caddr stmt)))
+								(intpn_finally (cdaddr stmt) s2 c-return c-break c-continue c-throw return_s)
+								(return_s s2))
+								))
+						(if (not (null? (caddr) stmt))
+							(intpn_finally (cdaddr stmt) s2 c-return c-break c-continue c-throw return_s)
+							(return_s s))))
+				(lambda (s) (SL_popLayer s (lambda (s2)
+					(if (not (null? (caddr stmt)))
+						(intpn_finally (cdaddr stmt) s2 c-return c-break c-continue c-throw return_s)
+						(return_s s2))
+				)))
 			)))
 	))
 						
@@ -311,7 +325,7 @@
 (define intpn_catch
 	(lambda (stmt state error c-return c-break c-continue c-throw return_s)
 		(SL_pushLayer state (lambda (s)
-			(SL_add (list (caar stmt) error) state (lambda (s2)
+			(SL_add (list (caar stmt) error) s (lambda (s2)
 				(intpn_stmt_auto (cadr stmt) s2 c-return c-break c-continue c-throw (lambda (s3)
 					(SL_popLayer s3 return_s)))
 					))))
@@ -332,7 +346,7 @@
 			((null? stmt) (return_s state))
 			((null? (car stmt)) (intpn_stmt_auto (cdr stmt) state c-return c-break c-continue c-throw return_s))
 			((list? (car stmt)) (intpn_stmt_auto (car stmt) state c-return c-break c-continue c-throw
-				(lambda (s) (intpn_stmt_auto (cdr stmt) s  c-return c-break c-continue c-throw return_s))))
+				(lambda (s) (intpn_stmt_auto (cdr stmt) s c-return c-break c-continue c-throw return_s))))
 			((equal? (car stmt) 'var) (intpn_var (cdr stmt) state return_s))
 			((equal? (car stmt) 'if) (intpn_if (cdr stmt) state c-return c-break c-continue c-throw return_s))
 			((equal? (car stmt) 'while) (intpn_while (cdr stmt) state c-return c-break c-continue c-throw return_s))
@@ -342,8 +356,18 @@
 			((equal? (car stmt) 'continue) (intpn_continue state c-continue))
 			((equal? (car stmt) 'try) (intpn_try (cdr stmt) state c-return c-break c-continue c-throw return_s))
 			((equal? (car stmt) 'throw) (intpn_throw (cdr stmt) state c-throw))
-			(else (intpn_expr_auto stmt state c-return c-break c-continue c-throw return_s))
+			(else (intpn_expr_auto stmt state return_s))
 		)
+	))
+
+(define invalid_goto
+	(lambda (dummy)
+		(error "Invalid break or continue instruction.")
+	))
+
+(define invalid_throw
+	(lambda (dummy1 dummy2)
+		(error "Invalid throw instruction.")
 	))
 
 ;Load the sample parser
@@ -355,5 +379,15 @@
 ;Interface Function
 (define interpret
 	(lambda (fname)
-		(interpret* (parser fname) (SL_init))
+		(SL_init (lambda (s)
+			(intpn_stmt_auto (parser fname) s
+				(lambda (v) (cond
+					((equal? v #t) 'true)
+					((equal? v #f) 'false)
+					(else v)))
+				invalid_goto
+				invalid_goto
+				invalid_throw
+				'())
+		))
 	))
