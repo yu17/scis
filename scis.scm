@@ -350,36 +350,83 @@
 		)
 	))
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(define eval_expr_auto
+	(lambda (expr state c-return_v)
+	))
+
+(define intpn_expr_auto
+	(lambda (expr state c-return_s)
+	))
+
 (define intpn_var
-	(lambda (expr state c-return)
-		(cond
-			((null? (cdr expr)) (SL_add (list (car expr) '())) state)
-			)))
+	(lambda (stmt state c-return_s)
+		(if (null? (cdr stmt))
+			(SL_add (list (car stmt) '()) state c-return_s)
+			(eval_expr_auto (cadr stmt) state (lambda (v)
+				(intpn_expr_auto (cadr stmt) state (lambda (s)
+					(SL_add (list (car stmt) v) s c-return_s)))))
+		)))
+
+(define intpn_if
+	(lambda (stmt state c-return_s)
+		(bool_expr_auto (car stmt) state (lambda (b)
+			(intpn_expr_auto (car stmt) state (lambda (s)
+				(cond
+					(b (intpn_stmt_auto (cadr stmt) s c-return_s))
+					((not (null? (cddr stmt))) (intpn_stmt_auto (caddr stmt) s c-return_s))
+					(else (c-return_s s))
+				)))))
+	))
+
+(define intpn_while
+	(lambda (stmt state c-return_s)
+		(bool_expr_auto (car stmt) state (lambda (b)
+			(intpn_expr_auto (car stmt) state (lambda (s)
+				(if b
+					(intpn_stmt_auto (cadr stmt) s (lambda (s2)
+						(intpn_while stmt s2 c-return_s)))
+					(c-return_s s))
+			))))
+	))
 
 ;Main Interpretation Function
 
-(define intpn_sort
-	(lambda (expr state c-return c-break c-continue c-throw)
+(define intpn_stmt_auto
+	(lambda (stmt state c-return_s c-break c-continue c-throw)
 		(cond
-			((null? expr) (c-return state))
-			((null? (car expr)) (intpn_sort (cdr expr) state c-return c-break c-continue c-throw))
-			((list? (car expr)) (intpn_sort (car expr) state
-				(lambda (s) (intpn_sort (cdr expr) s c-return c-break c-continue c-throw))
+			((null? stmt) (c-return_s state))
+			((null? (car stmt)) (intpn_stmt_auto (cdr stmt) state c-return_s c-break c-continue c-throw))
+			((list? (car stmt)) (intpn_stmt_auto (car stmt) state
+				(lambda (s) (intpn_stmt_auto (cdr stmt) s c-return c-break c-continue c-throw))
 				c-break
 				c-continue
 				c-throw))
-			((equal? (car expr) 'var) (intpn_var (cdr expr) state c-return))
-			((equal? (car expr) 'if) (intpn_if (cdr expr) state c-return c-break c-continue c-throw))
-			((equal? (car expr) 'while) (intpn_while (cdr expr) state c-return c-break c-continue c-throw))
-			((equal? (car expr) 'return) (intpn_return (cdr expr) state c-return -break c-continue c-throw))
-			((equal? (car expr) 'begin) (intpn_begin (cdr expr) state c-return c-break c-continue c-throw))
-			((equal? (car expr) 'break) (intpn_break (cdr expr) state c-return c-break c-continue c-throw))
-			((equal? (car expr) 'continue) (intpn_continue (cdr expr) state c-return c-break c-continue c-throw))
-			((equal? (car expr) 'throw) (intpn_throw (cdr expr) state c-return c-break c-continue c-throw))
-			((equal? (car expr) 'try) (intpn_try (cdr expr) state c-return c-break c-continue c-throw))
-			((equal? (car expr) 'catch) (intpn_catch (cdr expr) state c-return c-break c-continue c-throw))
-			((equal? (car expr) 'finally) (intpn_finally (cdr expr) state c-return c-break c-continue c-throw))
-			(else (intexp_sort expr state c-return c-break c-continue c-throw))
+			((equal? (car stmt) 'var) (intpn_var (cdr stmt) state c-return_s));;;
+			((equal? (car stmt) 'if) (intpn_if (cdr stmt) state c-return_s c-break c-continue c-throw))
+			((equal? (car stmt) 'while) (intpn_while (cdr stmt) state c-return c-break c-continue c-throw))
+			((equal? (car stmt) 'return) (intpn_return (cdr stmt) state c-return -break c-continue c-throw))
+			((equal? (car stmt) 'begin) (intpn_begin (cdr stmt) state c-return c-break c-continue c-throw))
+			((equal? (car stmt) 'break) (intpn_break (cdr stmt) state c-return c-break c-continue c-throw))
+			((equal? (car stmt) 'continue) (intpn_continue (cdr stmt) state c-return c-break c-continue c-throw))
+			((equal? (car stmt) 'throw) (intpn_throw (cdr stmt) state c-return c-break c-continue c-throw))
+			((equal? (car stmt) 'try) (intpn_try (cdr stmt) state c-return c-break c-continue c-throw))
+			((equal? (car stmt) 'catch) (intpn_catch (cdr stmt) state c-return c-break c-continue c-throw))
+			((equal? (car stmt) 'finally) (intpn_finally (cdr stmt) state c-return c-break c-continue c-throw))
+			(else (intpn_expr_auto stmt state c-return c-break c-continue c-throw))
 		)
 	))
 
