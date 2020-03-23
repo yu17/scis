@@ -192,6 +192,13 @@
 			(else (error (string-append "Invalid operator " (symbol->string (car expr)) "."))))
 	))
 
+(define bool_expr_auto
+	(lambda (expr state return_b)
+		(eval_expr_auto expr state (lamdba (v)
+			(return_b (and v (not (equal? v 0))))
+		))
+	))
+
 (define intpn_expr_noeffectoperator
 	(lambda (operands state return_s)
 		(intpn_expr_auto (car operands) state (lambda (s)
