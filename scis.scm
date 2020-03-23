@@ -1,7 +1,7 @@
 ;EECS 345 Interpreter Project Part 2
 ;Group 39. Jiaqi Yu, Yiquan Zhu, Renjie Xi
 
-
+;Value function. Keeps the literals and convert the variables to literals.
 (define eval_expr_symbol
 	(lambda (expr state return_v)
 		(cond
@@ -12,6 +12,7 @@
 			(else (SL_get expr state return_v)))
 	))
 
+;Value function. Call eval_expr_auto on the operands first and then return the sum of the results.
 (define eval_expr_add
 	(lambda (operands state return_v)
 		(eval_expr_auto (car operands) state (lambda (v1)
@@ -23,6 +24,7 @@
 				))))))
 	))
 
+;Value function. Call eval_expr_auto on the operands first and then return the difference or the negation of the results.
 (define eval_expr_sub
 	(lambda (operands state return_v)
 		(eval_expr_auto (car operands) state (lambda (v1)
@@ -38,6 +40,7 @@
 			)))))
 		))
 
+;Value function. Call eval_expr_auto on the operands first and then return the product of the results.
 (define eval_expr_mult
 	(lambda (operands state return_v)
 		(eval_expr_auto (car operands) state (lambda (v1)
@@ -49,6 +52,7 @@
 				))))))
 	))
 
+;Value function. Call eval_expr_auto on the operands first and then return the difference of the results.
 (define eval_expr_div
 	(lambda (operands state return_v)
 		(eval_expr_auto (car operands) state (lambda (v1)
@@ -60,6 +64,7 @@
 				))))))
 	))
 
+;Value function. Call eval_expr_auto on the operands first and then return the modulation of the results.
 (define eval_expr_mod
 	(lambda (operands state return_v)
 		(eval_expr_auto (car operands) state (lambda (v1)
@@ -71,6 +76,7 @@
 				))))))
 	))
 
+;Value(boolean) function. Call eval_expr_auto on the operands first and then return the logic and of the results.
 (define eval_expr_and
 	(lambda (operands state return_v)
 		(eval_expr_auto (car operands) state (lambda (v1)
@@ -83,6 +89,7 @@
 				)))
 	))
 
+;Value(boolean) function. Call eval_expr_auto on the operands first and then return the logic or of the results.
 (define eval_expr_or
 	(lambda (operands state return_v)
 		(eval_expr_auto (car operands) state (lambda (v1)
@@ -95,6 +102,7 @@
 				)))
 	))
 
+;Value(boolean) function. Call eval_expr_auto on the operand first and then return the logic not of the result.
 (define eval_expr_not
 	(lambda (operands state return_v)
 		(eval_expr_auto (car operands) state (lambda (v)
@@ -102,6 +110,7 @@
 		))
 	))
 
+;Value(boolean) function. Call eval_expr_auto on the operands first and then return whether the results are equal.
 (define eval_expr_eq
 	(lambda (operands state return_v)
 		(eval_expr_auto (car operands) state (lambda (v1)
@@ -111,6 +120,7 @@
 				))))))
 	))
 
+;Value(boolean) function. Call eval_expr_auto on the operands first and then return whether the results are not equal.
 (define eval_expr_neq
 	(lambda (operands state return_v)
 		(eval_expr_auto (car operands) state (lambda (v1)
@@ -120,6 +130,7 @@
 				))))))
 	))
 
+;Value(boolean) function. Call eval_expr_auto on the operands first and then return whether the first result is less than the second one.
 (define eval_expr_lt
 	(lambda (operands state return_v)
 		(eval_expr_auto (car operands) state (lambda (v1)
@@ -131,6 +142,7 @@
 				))))))
 	))
 
+;Value(boolean) function. Call eval_expr_auto on the operands first and then return whether the first result is greater than the second one.
 (define eval_expr_gt
 	(lambda (operands state return_v)
 		(eval_expr_auto (car operands) state (lambda (v1)
@@ -142,6 +154,7 @@
 				))))))
 	))
 
+;;Value(boolean) function. Call eval_expr_auto on the operands first and then return whether the first result is less or equal to than the second one.
 (define eval_expr_le
 	(lambda (operands state return_v)
 		(eval_expr_auto (car operands) state (lambda (v1)
@@ -153,6 +166,7 @@
 				))))))
 	))
 
+;Value(boolean) function. Call eval_expr_auto on the operands first and then return whether the first result is less than or equal to the second one.
 (define eval_expr_ge
 	(lambda (operands state return_v)
 		(eval_expr_auto (car operands) state (lambda (v1)
@@ -164,11 +178,13 @@
 				))))))
 	))
 
+;Value function. Return the evaluation result of the value being assigned.
 (define eval_expr_assign
 	(lambda (operands state return_v)
 		(eval_expr_auto (cadr operands) state return_v)
 	))
 
+;The sorter function for all the value function. Choose the corresponding evaluation function according to the first atom in the expression and pass the arguments to that function.
 (define eval_expr_auto
 	(lambda (expr state return_v)
 		(cond
@@ -191,6 +207,7 @@
 			(else (error (string-append "Invalid operator " (symbol->string (car expr)) "."))))
 	))
 
+;The dummy function that converts the results of the value functions to booleans.
 (define bool_expr_auto
 	(lambda (expr state return_b)
 		(eval_expr_auto expr state (lambda (v)
@@ -198,6 +215,7 @@
 		))
 	))
 
+;State function. Used for all non-assignment expressions. Return the new state after interpreting the operands.
 (define intpn_expr_noeffectoperator
 	(lambda (operands state return_s)
 		(intpn_expr_auto (car operands) state (lambda (s)
@@ -206,6 +224,7 @@
 				(return_s s))))
 	))
 
+;State function. Used for the assignment expression. Return the new state after the assignment.
 (define intpn_expr_assign
 	(lambda (operands state return_s)
 		(eval_expr_auto (cadr operands) state (lambda (v)
@@ -213,7 +232,7 @@
 				(SL_set (list (car operands) v) s return_s)))))
 	))
 		
-
+;State function. The sorter function for the state function of the expressions.
 (define intpn_expr_auto
 	(lambda (expr state return_s)
 		(cond
@@ -235,6 +254,7 @@
 			((equal? (car expr) '=) (intpn_expr_assign (cdr expr) state return_s)))
 	))
 
+;State function. Process the declaration.
 (define intpn_var
 	(lambda (stmt state return_s)
 		(if (null? (cdr stmt))
@@ -244,6 +264,7 @@
 					(SL_add (list (car stmt) v) s return_s)))))
 		)))
 
+;State function. Process the if statement.
 (define intpn_if
 	(lambda (stmt state c-return c-break c-continue c-throw return_s)
 		(bool_expr_auto (car stmt) state (lambda (b)
@@ -255,6 +276,8 @@
 				)))))
 	))
 
+;State function. Process the while statement.
+;Creates the c-break (which is essentially the return_s, which points to the caller before the loop) and the c-continue (which is essentially running the next loop) continuations. 
 (define intpn_while
 	(lambda (stmt state c-return c-break c-continue c-throw return_s)
 		(bool_expr_auto (car stmt) state (lambda (b)
@@ -269,11 +292,13 @@
 			)))
 	))
 
+;Value function. Process the return statement and calls c-return to return.
 (define intpn_return
 	(lambda (stmt state c-return)
 		(eval_expr_auto (car stmt) state c-return)
 	))
 
+;State function. Process the statement blocks. Creates a new layer when entering the block and remove it when leaving. It also adds a intermediate function to c-throw that removes a layer so that when throw is called in side a code block, the state layer is still properly removed.
 (define intpn_begin
 	(lambda (stmt state c-return c-break c-continue c-throw return_s)
 		(SL_pushLayer state (lambda (s)
@@ -284,16 +309,19 @@
 				(SL_popLayer s2 return_s)))))
 	))
 
+;Goto function. Remove a state layer and calls c-break.
 (define intpn_break
 	(lambda (state c-break)
 		(SL_popLayer state c-break)
 	))
 
+;Goto function. Remove a state layer and calls c-continue.
 (define intpn_continue
 	(lambda (state c-continue)
 		(SL_popLayer state c-continue)
 	))
 
+;State function. Process the try block. Creates a new layer for the statement block, checks if catch and finally exist and execute them. When it is properly returned, a state layer is removed before executing finally. Otherwise, that layer is removed by the throw function.
 (define intpn_try
 	(lambda (stmt state c-return c-break c-continue c-throw return_s)
 		(SL_pushLayer state (lambda (s)
@@ -316,30 +344,37 @@
 			)))
 	))
 						
-
+;Goto function. Remove a state layer and calls c-throw.
 (define intpn_throw
 	(lambda (stmt state c-throw)
 		(SL_popLayer state (lambda (s) (c-throw s (car stmt))))
 	))
 
+;State function. Similar to what the begin function do.
 (define intpn_catch
 	(lambda (stmt state error c-return c-break c-continue c-throw return_s)
 		(SL_pushLayer state (lambda (s)
 			(SL_add (list (caar stmt) error) s (lambda (s2)
-				(intpn_stmt_auto (cadr stmt) s2 c-return c-break c-continue c-throw (lambda (s3)
+				(intpn_stmt_auto (cadr stmt) s2 c-return c-break c-continue
+				(lambda (s3 e)
+					(SL_popLayer s3 (lambda (s4) (c-throw s4 e))))
+				(lambda (s3)
 					(SL_popLayer s3 return_s)))
 					))))
 	))
 
+;State function. Similar to what the begin function do.
 (define intpn_finally
 	(lambda (stmt state c-return c-break c-continue c-throw return_s)
 		(SL_pushLayer state (lambda (s)
-			(intpn_stmt_auto (car stmt) s c-return c-break c-continue c-throw (lambda (s2)
+			(intpn_stmt_auto (car stmt) s c-return c-break c-continue
+			(lambda (s2 e)
+					(SL_popLayer s2 (lambda (s3) (c-throw s3 e))))
+			(lambda (s2)
 				(SL_popLayer s2 return_s)))))
 	))
 
-;Main Interpretation Function
-
+;The main sorter function of the interpreter. Takes the result from the parser and execute them with the appropriate interpretation functions.
 (define intpn_stmt_auto
 	(lambda (stmt state c-return c-break c-continue c-throw return_s)
 		(cond

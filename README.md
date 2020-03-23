@@ -35,29 +35,38 @@ Boolean operators: &&, ||, !<br/>
 Boolean operation short-circuit evaluation<br/>
 Assignment operation =<br/>
 Inline assignment (nested assignment and assignment within expression)<br/>
+Instructions: var, if, while, return, begin, break, continue, try, catch, finally, throw
 
-## About State Functions and Value Functions:
-
-In order to allow assignments within evaluations, all the value functions return both a value and a state. Therefore, almost all the functions return states, but only the value functions would return a value as well, just to be clear.
+#### Implementation:<br/>
+The result of the parser is first passed to `intpn_stmt_auto`, which chooses the corresponding interpretation functions for each statement. As for the expression, we have `intpn_expr_auto` which returns the result state after evaluating the expression, and `eval_expr_auto` which returns the result value after evaluating it. When processing the expressions, we don't distinguish whether the function returns a boolean or a integer. For `if` or `while` statements, they call `bool_expr_auto` which automatically cast integer to boolean so as to ensure that the return value is a boolean.
 
 ## Function Naming Conventions:
 
 Functions are classfied by the prefixes in their names.
 
+#### L\_\*
+Acronym for stateLayer. State layer operation functions.<br/>
+Each layer of the state are stored in the format: ((variable\_name\_list) (variable\_value\_list))
+
 #### SL\_\*
-Acronym for StateList. State operation functions.<br/>
-The states are stored in the format: ((variable\_name\_list) (variable\_value\_list))
+Acronym for StateList. State list operation function.<br/>
+The layers of the states are stacked in the format: (layer1 layer2 layer3 ...)
 
-#### eval\_\*
-Acronym for evaluation. Value functions. Usually takes an expression and a state and returns the evaluation result value and the state after evaluation (with possible assignments applied).
+#### eval\_expr\_\*
+Acronym for EVALuation EXPRession. Value functions. Takes a state and returns the result of the corresponding calculation based on the state.
 
-#### terp\_\*
-Acronym for Interpretation. State functions. Usually takes a few arguments and a state and returns the result state.
+#### bool\_expr\_\*
+Acronym for BOOLean EXPRession. Boolean function. This is a dummy function that basically calls the `eval\_expr\_\*` functions and convert the result to a boolean.
 
-#### return\_\*
-The functions that handle or present the return value.
+#### intrp\_expr\_\*
+Acronym for INTeRPretation EXPRession. State functions. Takes a state and returns the result state of the corresponding calculation. State changes in these functions only occurs when there are assignment expression.
+
+#### intrp\_*
+Acronym for INTeRPretation. State function. Handles the statements. Takes the arguments of a statement and returns the result state.
+
+#### invalid\_*
+Dummy functions that are used to initialize break, continue, and throw continuations. These functions would throw an error since the only case when they are called is where these statements shouldn't exist.
 
 ## Todos:
 
-Fix integer-to-boolean casting logic.<br/>
 Edge case tests.<br/>
