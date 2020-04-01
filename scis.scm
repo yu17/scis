@@ -406,7 +406,7 @@
 	))
 
 ;Load the sample parser
-(load "simpleParser.scm")
+(load "functionParser.scm")
 
 ;Load the state operation functions
 (load "stateList.scm")
