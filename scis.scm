@@ -3,21 +3,21 @@
 
 ;Value function. Keeps the literals and convert the variables to literals.
 (define eval_expr_symbol
-	(lambda (expr state return_v)
+	(lambda (expr env return_v)
 		(cond
 			((or (number? expr)
 				(boolean? expr)) (return_v expr))
 			((equal? (string-upcase (symbol->string expr)) "TRUE") (return_v #t))
 			((equal? (string-upcase (symbol->string expr)) "FALSE") (return_v #f))
-			(else (SL_get expr state return_v)))
+			(else (EL_SL_get expr env return_v)))
 	))
 
 ;Value function. Call eval_expr_auto on the operands first and then return the sum of the results.
 (define eval_expr_add
-	(lambda (operands state return_v)
-		(eval_expr_auto (car operands) state (lambda (v1)
-			(intpn_expr_auto (car operands) state (lambda (s)
-				(eval_expr_auto (cadr operands) s (lambda (v2)
+	(lambda (operands env return_v)
+		(eval_expr_auto (car operands) env (lambda (v1)
+			(intpn_expr_auto (car operands) env (lambda (e)
+				(eval_expr_auto (cadr operands) e (lambda (v2)
 					(if (not (and (number? v1) (number? v2)))
 						(error "Adding non-number values!")
 						(return_v (+ v1 v2)))
@@ -26,12 +26,12 @@
 
 ;Value function. Call eval_expr_auto on the operands first and then return the difference or the negation of the results.
 (define eval_expr_sub
-	(lambda (operands state return_v)
-		(eval_expr_auto (car operands) state (lambda (v1)
-			(intpn_expr_auto (car operands) state (lambda (s)
+	(lambda (operands env return_v)
+		(eval_expr_auto (car operands) env (lambda (v1)
+			(intpn_expr_auto (car operands) env (lambda (e)
 				(cond
 					((not (number? v1)) (error "Subtracting/Negating non-number values!"))
-					((not (null? (cdr operands))) (eval_expr_auto (cadr operands) s (lambda (v2)
+					((not (null? (cdr operands))) (eval_expr_auto (cadr operands) e (lambda (v2)
 						(if (not (number? v2))
 							(error "Subtracting non-number values!")
 							(return_v (- v1 v2)))
@@ -42,10 +42,10 @@
 
 ;Value function. Call eval_expr_auto on the operands first and then return the product of the results.
 (define eval_expr_mult
-	(lambda (operands state return_v)
-		(eval_expr_auto (car operands) state (lambda (v1)
-			(intpn_expr_auto (car operands) state (lambda (s)
-				(eval_expr_auto (cadr operands) s (lambda (v2)
+	(lambda (operands env return_v)
+		(eval_expr_auto (car operands) env (lambda (v1)
+			(intpn_expr_auto (car operands) env (lambda (e)
+				(eval_expr_auto (cadr operands) e (lambda (v2)
 					(if (not (and (number? v1) (number? v2)))
 						(error "Multiplying non-number values!")
 						(return_v (* v1 v2)))
@@ -54,10 +54,10 @@
 
 ;Value function. Call eval_expr_auto on the operands first and then return the difference of the results.
 (define eval_expr_div
-	(lambda (operands state return_v)
-		(eval_expr_auto (car operands) state (lambda (v1)
-			(intpn_expr_auto (car operands) state (lambda (s)
-				(eval_expr_auto (cadr operands) s (lambda (v2)
+	(lambda (operands env return_v)
+		(eval_expr_auto (car operands) env (lambda (v1)
+			(intpn_expr_auto (car operands) env (lambda (e)
+				(eval_expr_auto (cadr operands) e (lambda (v2)
 					(if (not (and (number? v1) (number? v2)))
 						(error "Dividing non-number values!")
 						(return_v (quotient v1 v2)))
@@ -66,10 +66,10 @@
 
 ;Value function. Call eval_expr_auto on the operands first and then return the modulation of the results.
 (define eval_expr_mod
-	(lambda (operands state return_v)
-		(eval_expr_auto (car operands) state (lambda (v1)
-			(intpn_expr_auto (car operands) state (lambda (s)
-				(eval_expr_auto (cadr operands) s (lambda (v2)
+	(lambda (operands env return_v)
+		(eval_expr_auto (car operands) env (lambda (v1)
+			(intpn_expr_auto (car operands) env (lambda (e)
+				(eval_expr_auto (cadr operands) e (lambda (v2)
 					(if (not (and (number? v1) (number? v2)))
 						(error "Dividing non-number values!")
 						(return_v (modulo v1 v2)))
@@ -78,12 +78,12 @@
 
 ;Value(boolean) function. Call eval_expr_auto on the operands first and then return the logic and of the results.
 (define eval_expr_and
-	(lambda (operands state return_v)
-		(eval_expr_auto (car operands) state (lambda (v1)
+	(lambda (operands env return_v)
+		(eval_expr_auto (car operands) env (lambda (v1)
 			(if (or (not v1) (equal? v1 0))
 				(return_v #f)
-				(intpn_expr_auto (car operands) state (lambda (s)
-					(eval_expr_auto (cadr operands) s (lambda (v2)
+				(intpn_expr_auto (car operands) env (lambda (e)
+					(eval_expr_auto (cadr operands) e (lambda (v2)
 						(return_v (and v2 (not (equal? v2 0))))
 					))))
 				)))
@@ -91,12 +91,12 @@
 
 ;Value(boolean) function. Call eval_expr_auto on the operands first and then return the logic or of the results.
 (define eval_expr_or
-	(lambda (operands state return_v)
-		(eval_expr_auto (car operands) state (lambda (v1)
+	(lambda (operands env return_v)
+		(eval_expr_auto (car operands) env (lambda (v1)
 			(if (and v1 (not (equal? v1 0)))
 				(return_v #t)
-				(intpn_expr_auto (car operands) state (lambda (s)
-					(eval_expr_auto (cadr operands) s (lambda (v2)
+				(intpn_expr_auto (car operands) env (lambda (e)
+					(eval_expr_auto (cadr operands) e (lambda (v2)
 						(return_v (not (or (not v2) (equal? v2 0))))
 					))))
 				)))
@@ -104,38 +104,38 @@
 
 ;Value(boolean) function. Call eval_expr_auto on the operand first and then return the logic not of the result.
 (define eval_expr_not
-	(lambda (operands state return_v)
-		(eval_expr_auto (car operands) state (lambda (v)
+	(lambda (operands env return_v)
+		(eval_expr_auto (car operands) env (lambda (v)
 			(return_v (or (not v) (equal? v 0)))
 		))
 	))
 
 ;Value(boolean) function. Call eval_expr_auto on the operands first and then return whether the results are equal.
 (define eval_expr_eq
-	(lambda (operands state return_v)
-		(eval_expr_auto (car operands) state (lambda (v1)
-			(intpn_expr_auto (car operands) state (lambda (s)
-				(eval_expr_auto (cadr operands) s (lambda (v2)
+	(lambda (operands env return_v)
+		(eval_expr_auto (car operands) env (lambda (v1)
+			(intpn_expr_auto (car operands) env (lambda (e)
+				(eval_expr_auto (cadr operands) e (lambda (v2)
 					(return_v (equal? v1 v2))
 				))))))
 	))
 
 ;Value(boolean) function. Call eval_expr_auto on the operands first and then return whether the results are not equal.
 (define eval_expr_neq
-	(lambda (operands state return_v)
-		(eval_expr_auto (car operands) state (lambda (v1)
-			(intpn_expr_auto (car operands) state (lambda (s)
-				(eval_expr_auto (cadr operands) s (lambda (v2)
+	(lambda (operands env return_v)
+		(eval_expr_auto (car operands) env (lambda (v1)
+			(intpn_expr_auto (car operands) env (lambda (e)
+				(eval_expr_auto (cadr operands) e (lambda (v2)
 					(return_v (not (equal? v1 v2)))
 				))))))
 	))
 
 ;Value(boolean) function. Call eval_expr_auto on the operands first and then return whether the first result is less than the second one.
 (define eval_expr_lt
-	(lambda (operands state return_v)
-		(eval_expr_auto (car operands) state (lambda (v1)
-			(intpn_expr_auto (car operands) state (lambda (s)
-				(eval_expr_auto (cadr operands) s (lambda (v2)
+	(lambda (operands env return_v)
+		(eval_expr_auto (car operands) env (lambda (v1)
+			(intpn_expr_auto (car operands) env (lambda (e)
+				(eval_expr_auto (cadr operands) e (lambda (v2)
 					(if (not (and (number? v1) (number? v2)))
 						(error "Comparing non-number values!")
 						(return_v (< v1 v2)))
@@ -144,10 +144,10 @@
 
 ;Value(boolean) function. Call eval_expr_auto on the operands first and then return whether the first result is greater than the second one.
 (define eval_expr_gt
-	(lambda (operands state return_v)
-		(eval_expr_auto (car operands) state (lambda (v1)
-			(intpn_expr_auto (car operands) state (lambda (s)
-				(eval_expr_auto (cadr operands) s (lambda (v2)
+	(lambda (operands env return_v)
+		(eval_expr_auto (car operands) env (lambda (v1)
+			(intpn_expr_auto (car operands) env (lambda (e)
+				(eval_expr_auto (cadr operands) e (lambda (v2)
 					(if (not (and (number? v1) (number? v2)))
 						(error "Comparing non-number values!")
 						(return_v (> v1 v2)))
@@ -156,10 +156,10 @@
 
 ;;Value(boolean) function. Call eval_expr_auto on the operands first and then return whether the first result is less or equal to than the second one.
 (define eval_expr_le
-	(lambda (operands state return_v)
-		(eval_expr_auto (car operands) state (lambda (v1)
-			(intpn_expr_auto (car operands) state (lambda (s)
-				(eval_expr_auto (cadr operands) s (lambda (v2)
+	(lambda (operands env return_v)
+		(eval_expr_auto (car operands) env (lambda (v1)
+			(intpn_expr_auto (car operands) env (lambda (e)
+				(eval_expr_auto (cadr operands) e (lambda (v2)
 					(if (not (and (number? v1) (number? v2)))
 						(error "Comparing non-number values!")
 						(return_v (<= v1 v2)))
@@ -168,10 +168,10 @@
 
 ;Value(boolean) function. Call eval_expr_auto on the operands first and then return whether the first result is less than or equal to the second one.
 (define eval_expr_ge
-	(lambda (operands state return_v)
-		(eval_expr_auto (car operands) state (lambda (v1)
-			(intpn_expr_auto (car operands) state (lambda (s)
-				(eval_expr_auto (cadr operands) s (lambda (v2)
+	(lambda (operands env return_v)
+		(eval_expr_auto (car operands) env (lambda (v1)
+			(intpn_expr_auto (car operands) env (lambda (e)
+				(eval_expr_auto (cadr operands) e (lambda (v2)
 					(if (not (and (number? v1) (number? v2)))
 						(error "Comparing non-number values!")
 						(return_v (>= v1 v2)))
@@ -180,63 +180,63 @@
 
 ;Value function. Return the evaluation result of the value being assigned.
 (define eval_expr_assign
-	(lambda (operands state return_v)
-		(eval_expr_auto (cadr operands) state return_v)
+	(lambda (operands env return_v)
+		(eval_expr_auto (cadr operands) env return_v)
 	))
 
 ;The sorter function for all the value function. Choose the corresponding evaluation function according to the first atom in the expression and pass the arguments to that function.
 (define eval_expr_auto
-	(lambda (expr state return_v)
+	(lambda (expr env return_v)
 		(cond
-			((not (list? expr)) (eval_expr_symbol expr state return_v))
-			((equal? (car expr) '+) (eval_expr_add (cdr expr) state return_v))
-			((equal? (car expr) '-) (eval_expr_sub (cdr expr) state return_v))
-			((equal? (car expr) '*) (eval_expr_mult (cdr expr) state return_v))
-			((equal? (car expr) '/) (eval_expr_div (cdr expr) state return_v))
-			((equal? (car expr) '%) (eval_expr_mod (cdr expr) state return_v))
-			((equal? (car expr) '&&) (eval_expr_and (cdr expr) state return_v))
-			((equal? (car expr) (string->symbol "||")) (eval_expr_or (cdr expr) state return_v))
-			((equal? (car expr) '!) (eval_expr_not (cdr expr) state return_v))
-			((equal? (car expr) '==) (eval_expr_eq (cdr expr) state return_v))
-			((equal? (car expr) '!=) (eval_expr_neq (cdr expr) state return_v))
-			((equal? (car expr) '<) (eval_expr_lt (cdr expr) state return_v))
-			((equal? (car expr) '>) (eval_expr_gt (cdr expr) state return_v))
-			((equal? (car expr) '<=) (eval_expr_le (cdr expr) state return_v))
-			((equal? (car expr) '>=) (eval_expr_ge (cdr expr) state return_v))
-			((equal? (car expr) '=) (eval_expr_assign (cdr expr) state return_v))
+			((not (list? expr)) (eval_expr_symbol expr env return_v))
+			((equal? (car expr) '+) (eval_expr_add (cdr expr) env return_v))
+			((equal? (car expr) '-) (eval_expr_sub (cdr expr) env return_v))
+			((equal? (car expr) '*) (eval_expr_mult (cdr expr) env return_v))
+			((equal? (car expr) '/) (eval_expr_div (cdr expr) env return_v))
+			((equal? (car expr) '%) (eval_expr_mod (cdr expr) env return_v))
+			((equal? (car expr) '&&) (eval_expr_and (cdr expr) env return_v))
+			((equal? (car expr) (string->symbol "||")) (eval_expr_or (cdr expr) env return_v))
+			((equal? (car expr) '!) (eval_expr_not (cdr expr) env return_v))
+			((equal? (car expr) '==) (eval_expr_eq (cdr expr) env return_v))
+			((equal? (car expr) '!=) (eval_expr_neq (cdr expr) env return_v))
+			((equal? (car expr) '<) (eval_expr_lt (cdr expr) env return_v))
+			((equal? (car expr) '>) (eval_expr_gt (cdr expr) env return_v))
+			((equal? (car expr) '<=) (eval_expr_le (cdr expr) env return_v))
+			((equal? (car expr) '>=) (eval_expr_ge (cdr expr) env return_v))
+			((equal? (car expr) '=) (eval_expr_assign (cdr expr) env return_v))
 			(else (error (string-append "Invalid operator " (symbol->string (car expr)) "."))))
 	))
 
 ;The dummy function that converts the results of the value functions to booleans.
 (define bool_expr_auto
-	(lambda (expr state return_b)
-		(eval_expr_auto expr state (lambda (v)
+	(lambda (expr env return_b)
+		(eval_expr_auto expr env (lambda (v)
 			(return_b (and v (not (equal? v 0))))
 		))
 	))
 
-;State function. Used for all non-assignment expressions. Return the new state after interpreting the operands.
+;env function. Used for all non-assignment expressions. Return the new env after interpreting the operands.
 (define intpn_expr_noeffectoperator
-	(lambda (operands state return_s)
-		(intpn_expr_auto (car operands) state (lambda (s)
+	(lambda (operands env return_e)
+		(intpn_expr_auto (car operands) env (lambda (e)
 			(if (not (null? (cdr operands)))
-				(intpn_expr_auto (cadr operands) s return_s)
-				(return_s s))))
+				(intpn_expr_auto (cadr operands) e return_e)
+				(return_e s))))
 	))
 
-;State function. Used for the assignment expression. Return the new state after the assignment.
+;env function. Used for the assignment expression. Return the new env after the assignment.
 (define intpn_expr_assign
-	(lambda (operands state return_s)
-		(eval_expr_auto (cadr operands) state (lambda (v)
-			(intpn_expr_auto (cadr operands) state (lambda (s)
-				(SL_set (list (car operands) v) s return_s)))))
+	(lambda (operands env return_e)
+		(eval_expr_auto (cadr operands) env (lambda (v)
+			(intpn_expr_auto (cadr operands) env (lambda (e)
+				(EL_SL_set (list (car operands) v) e return_e)))))
 	))
 		
-;State function. The sorter function for the state function of the expressions.
+;env function. The sorter function for the env function of the expressions.
 (define intpn_expr_auto
-	(lambda (expr state return_s)
+	(lambda (expr env return_e)
 		(cond
-			((not (list? expr)) (return_s state))
+			((not (list? expr)) (return_e env))
 			((or (equal? (car expr) '+)
 				(equal? (car expr) '-)
 				(equal? (car expr) '*)
@@ -250,148 +250,148 @@
 				(equal? (car expr) '<)
 				(equal? (car expr) '>)
 				(equal? (car expr) '<=)
-				(equal? (car expr) '>=)) (intpn_expr_noeffectoperator (cdr expr) state return_s))
-			((equal? (car expr) '=) (intpn_expr_assign (cdr expr) state return_s)))
+				(equal? (car expr) '>=)) (intpn_expr_noeffectoperator (cdr expr) env return_e))
+			((equal? (car expr) '=) (intpn_expr_assign (cdr expr) env return_e)))
 	))
 
-;State function. Process the declaration.
+;env function. Process the declaration.
 (define intpn_var
-	(lambda (stmt state return_s)
+	(lambda (stmt env return_e)
 		(if (null? (cdr stmt))
-			(SL_add (list (car stmt) '()) state return_s)
-			(eval_expr_auto (cadr stmt) state (lambda (v)
-				(intpn_expr_auto (cadr stmt) state (lambda (s)
-					(SL_add (list (car stmt) v) s return_s)))))
+			(EL_SL_add (list (car stmt) '()) env return_e)
+			(eval_expr_auto (cadr stmt) env (lambda (v)
+				(intpn_expr_auto (cadr stmt) env (lambda (e)
+					(EL_SL_add (list (car stmt) v) e return_e)))))
 		)))
 
-;State function. Process the if statement.
+;env function. Process the if envment.
 (define intpn_if
-	(lambda (stmt state c-return c-break c-continue c-throw return_s)
-		(bool_expr_auto (car stmt) state (lambda (b)
-			(intpn_expr_auto (car stmt) state (lambda (s)
+	(lambda (stmt env c-return c-break c-continue c-throw return_e)
+		(bool_expr_auto (car stmt) env (lambda (b)
+			(intpn_expr_auto (car stmt) env (lambda (e)
 				(cond
-					(b (intpn_stmt_auto (cadr stmt) s c-return c-break c-continue c-throw return_s))
-					((not (null? (cddr stmt))) (intpn_stmt_auto (caddr stmt) s c-return c-break c-continue c-throw return_s))
-					(else (return_s s))
+					(b (intpn_stmt_auto (cadr stmt) e c-return c-break c-continue c-throw return_e))
+					((not (null? (cddr stmt))) (intpn_stmt_auto (caddr stmt) e c-return c-break c-continue c-throw return_e))
+					(else (return_e e))
 				)))))
 	))
 
-;State function. Process the while statement.
-;Creates the c-break (which is essentially the return_s, which points to the caller before the loop) and the c-continue (which is essentially running the next loop) continuations. 
+;env function. Process the while envment.
+;Creates the c-break (which is essentially the return_e, which points to the caller before the loop) and the c-continue (which is essentially running the next loop) continuations. 
 (define intpn_while
-	(lambda (stmt state c-return c-break c-continue c-throw return_s)
-		(bool_expr_auto (car stmt) state (lambda (b)
-			(intpn_expr_auto (car stmt) state (lambda (s)
+	(lambda (stmt env c-return c-break c-continue c-throw return_e)
+		(bool_expr_auto (car stmt) env (lambda (b)
+			(intpn_expr_auto (car stmt) env (lambda (e)
 				(if b
-					(intpn_stmt_auto (cadr stmt) s c-return
-						return_s
-						(lambda (s2) (intpn_while stmt s2 c-return c-break c-continue c-throw return_s))
+					(intpn_stmt_auto (cadr stmt) e c-return
+						return_e
+						(lambda (e2) (intpn_while stmt e2 c-return c-break c-continue c-throw return_e))
 						c-throw
-						(lambda (s2) (intpn_while stmt s2 c-return c-break c-continue c-throw return_s)))
-					(return_s s)))
+						(lambda (e2) (intpn_while stmt e2 c-return c-break c-continue c-throw return_e)))
+					(return_e e)))
 			)))
 	))
 
-;Value function. Process the return statement and calls c-return to return.
+;Value function. Process the return envment and calls c-return to return.
 (define intpn_return
-	(lambda (stmt state c-return)
-		(eval_expr_auto (car stmt) state c-return)
+	(lambda (stmt env c-return)
+		(eval_expr_auto (car stmt) env c-return)
 	))
 
-;State function. Process the statement blocks. Creates a new layer when entering the block and remove it when leaving. It also adds a intermediate function to c-throw that removes a layer so that when throw is called in side a code block, the state layer is still properly removed.
+;env function. Process the envment blocks. Creates a new layer when entering the block and remove it when leaving. It also adds a intermediate function to c-throw that removes a layer so that when throw is called in side a code block, the env layer is still properly removed.
 (define intpn_begin
-	(lambda (stmt state c-return c-break c-continue c-throw return_s)
-		(SL_pushLayer state (lambda (s)
-			(intpn_stmt_auto stmt s c-return c-break c-continue
-			(lambda (s2 e)
-				(SL_popLayer s2 (lambda (s3) (c-throw s3 e))))
-			(lambda (s2)
-				(SL_popLayer s2 return_s)))))
+	(lambda (stmt env c-return c-break c-continue c-throw return_e)
+		(EL_pushLayer env (lambda (e)
+			(intpn_stmt_auto stmt e c-return c-break c-continue
+			(lambda (e2 err)
+				(EL_popLayer e2 (lambda (e3) (c-throw e3 err))))
+			(lambda (e2)
+				(EL_popLayer e2 return_e)))))
 	))
 
-;Goto function. Remove a state layer and calls c-break.
+;Goto function. Remove a env layer and calls c-break.
 (define intpn_break
-	(lambda (state c-break)
-		(SL_popLayer state c-break)
+	(lambda (env c-break)
+		(EL_popLayer env c-break)
 	))
 
-;Goto function. Remove a state layer and calls c-continue.
+;Goto function. Remove a env layer and calls c-continue.
 (define intpn_continue
-	(lambda (state c-continue)
-		(SL_popLayer state c-continue)
+	(lambda (env c-continue)
+		(EL_popLayer env c-continue)
 	))
 
-;State function. Process the try block. Creates a new layer for the statement block, checks if catch and finally exist and execute them. When it is properly returned, a state layer is removed before executing finally. Otherwise, that layer is removed by the throw function.
+;env function. Process the try block. Creates a new layer for the envment block, checks if catch and finally exist and execute them. When it is properly returned, a env layer is removed before executing finally. Otherwise, that layer is removed by the throw function.
 (define intpn_try
-	(lambda (stmt state c-return c-break c-continue c-throw return_s)
-		(SL_pushLayer state (lambda (s)
-			(intpn_stmt_auto (car stmt) s c-return c-break c-continue
-				(lambda (s e)
+	(lambda (stmt env c-return c-break c-continue c-throw return_e)
+		(EL_pushLayer env (lambda (e)
+			(intpn_stmt_auto (car stmt) e c-return c-break c-continue
+				(lambda (e2 err)
 					(if (not (null? (cadr stmt)))
-						(intpn_catch (cdadr stmt) s e c-return c-break c-continue c-throw (lambda (s2)
+						(intpn_catch (cdadr stmt) e2 err c-return c-break c-continue c-throw (lambda (e3)
 							(if (not (null? (caddr stmt)))
-								(intpn_finally (cdaddr stmt) s2 c-return c-break c-continue c-throw return_s)
-								(return_s s2))
+								(intpn_finally (cdaddr stmt) e3 c-return c-break c-continue c-throw return_e)
+								(return_e e3))
 								))
 						(if (not (null? (caddr) stmt))
-							(intpn_finally (cdaddr stmt) s2 c-return c-break c-continue c-throw return_s)
-							(return_s s))))
-				(lambda (s) (SL_popLayer s (lambda (s2)
+							(intpn_finally (cdaddr stmt) e3 c-return c-break c-continue c-throw return_e)
+							(return_e e2))))
+				(lambda (e2) (EL_popLayer e2 (lambda (e3)
 					(if (not (null? (caddr stmt)))
-						(intpn_finally (cdaddr stmt) s2 c-return c-break c-continue c-throw return_s)
-						(return_s s2))
+						(intpn_finally (cdaddr stmt) e3 c-return c-break c-continue c-throw return_e)
+						(return_e e3))
 				)))
 			)))
 	))
 						
-;Goto function. Remove a state layer and calls c-throw.
+;Goto function. Remove a env layer and calls c-throw.
 (define intpn_throw
-	(lambda (stmt state c-throw)
-		(SL_popLayer state (lambda (s) (c-throw s (car stmt))))
+	(lambda (stmt env c-throw)
+		(EL_popLayer env (lambda (e) (c-throw e (car stmt))))
 	))
 
-;State function. Similar to what the begin function do.
+;env function. Similar to what the begin function do.
 (define intpn_catch
-	(lambda (stmt state error c-return c-break c-continue c-throw return_s)
-		(SL_pushLayer state (lambda (s)
-			(SL_add (list (caar stmt) error) s (lambda (s2)
-				(intpn_stmt_auto (cadr stmt) s2 c-return c-break c-continue
-				(lambda (s3 e)
-					(SL_popLayer s3 (lambda (s4) (c-throw s4 e))))
-				(lambda (s3)
-					(SL_popLayer s3 return_s)))
+	(lambda (stmt env error c-return c-break c-continue c-throw return_e)
+		(EL_pushLayer env (lambda (e)
+			(EL_SL_add (list (caar stmt) error) e (lambda (e2)
+				(intpn_stmt_auto (cadr stmt) e2 c-return c-break c-continue
+				(lambda (e3 err)
+					(EL_popLayer e3 (lambda (e4) (c-throw e4 err))))
+				(lambda (e3)
+					(EL_popLayer e3 return_e)))
 					))))
 	))
 
-;State function. Similar to what the begin function do.
+;env function. Similar to what the begin function do.
 (define intpn_finally
-	(lambda (stmt state c-return c-break c-continue c-throw return_s)
-		(SL_pushLayer state (lambda (s)
-			(intpn_stmt_auto (car stmt) s c-return c-break c-continue
-			(lambda (s2 e)
-					(SL_popLayer s2 (lambda (s3) (c-throw s3 e))))
-			(lambda (s2)
-				(SL_popLayer s2 return_s)))))
+	(lambda (stmt env c-return c-break c-continue c-throw return_e)
+		(EL_pushLayer env (lambda (e)
+			(intpn_stmt_auto (car stmt) e c-return c-break c-continue
+			(lambda (e2 err)
+					(EL_popLayer e2 (lambda (e3) (c-throw e3 err))))
+			(lambda (e2)
+				(EL_popLayer e2 return_e)))))
 	))
 
 ;The main sorter function of the interpreter. Takes the result from the parser and execute them with the appropriate interpretation functions.
 (define intpn_stmt_auto
-	(lambda (stmt state c-return c-break c-continue c-throw return_s)
+	(lambda (stmt env c-return c-break c-continue c-throw return_e)
 		(cond
-			((null? stmt) (return_s state))
-			((null? (car stmt)) (intpn_stmt_auto (cdr stmt) state c-return c-break c-continue c-throw return_s))
-			((list? (car stmt)) (intpn_stmt_auto (car stmt) state c-return c-break c-continue c-throw
-				(lambda (s) (intpn_stmt_auto (cdr stmt) s c-return c-break c-continue c-throw return_s))))
-			((equal? (car stmt) 'var) (intpn_var (cdr stmt) state return_s))
-			((equal? (car stmt) 'if) (intpn_if (cdr stmt) state c-return c-break c-continue c-throw return_s))
-			((equal? (car stmt) 'while) (intpn_while (cdr stmt) state c-return c-break c-continue c-throw return_s))
-			((equal? (car stmt) 'return) (intpn_return (cdr stmt) state c-return))
-			((equal? (car stmt) 'begin) (intpn_begin (cdr stmt) state c-return c-break c-continue c-throw return_s))
-			((equal? (car stmt) 'break) (intpn_break state c-break))
-			((equal? (car stmt) 'continue) (intpn_continue state c-continue))
-			((equal? (car stmt) 'try) (intpn_try (cdr stmt) state c-return c-break c-continue c-throw return_s))
-			((equal? (car stmt) 'throw) (intpn_throw (cdr stmt) state c-throw))
-			(else (intpn_expr_auto stmt state return_s))
+			((null? stmt) (return_e env))
+			((null? (car stmt)) (intpn_stmt_auto (cdr stmt) env c-return c-break c-continue c-throw return_e))
+			((list? (car stmt)) (intpn_stmt_auto (car stmt) env c-return c-break c-continue c-throw
+				(lambda (e) (intpn_stmt_auto (cdr stmt) e c-return c-break c-continue c-throw return_e))))
+			((equal? (car stmt) 'var) (intpn_var (cdr stmt) env return_e))
+			((equal? (car stmt) 'if) (intpn_if (cdr stmt) env c-return c-break c-continue c-throw return_e))
+			((equal? (car stmt) 'while) (intpn_while (cdr stmt) env c-return c-break c-continue c-throw return_e))
+			((equal? (car stmt) 'return) (intpn_return (cdr stmt) env c-return))
+			((equal? (car stmt) 'begin) (intpn_begin (cdr stmt) env c-return c-break c-continue c-throw return_e))
+			((equal? (car stmt) 'break) (intpn_break env c-break))
+			((equal? (car stmt) 'continue) (intpn_continue env c-continue))
+			((equal? (car stmt) 'try) (intpn_try (cdr stmt) env c-return c-break c-continue c-throw return_e))
+			((equal? (car stmt) 'throw) (intpn_throw (cdr stmt) env c-throw))
+			(else (intpn_expr_auto stmt env return_e))
 		)
 	))
 
@@ -408,14 +408,14 @@
 ;Load the sample parser
 (load "functionParser.scm")
 
-;Load the state operation functions
-(load "stateList.scm")
+;Load the env operation functions
+(load "envList.scm")
 
 ;Interface Function
 (define interpret
 	(lambda (fname)
-		(SL_init (lambda (s)
-			(intpn_stmt_auto (parser fname) s
+		(EL_init (lambda (e)
+			(intpn_stmt_auto (parser fname) e
 				(lambda (v) (cond
 					((equal? v #t) 'true)
 					((equal? v #f) 'false)
