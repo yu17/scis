@@ -146,7 +146,7 @@
 
 (define F_add
 	(lambda (func f_layer return_f)
-		(F_check (car func) f_layer (lambda (b) (if (b)
+		(F_check (car func) f_layer (lambda (b) (if b
 			(error (string-append "The function " (symbol->string (car func)) " is being redefined."))
 			(return_f (cons func f_layer))
 		)))
@@ -154,7 +154,7 @@
 
 (define FL_add
 	(lambda (func f_list return_f)
-		(F_add func (car f_list) (lambda (fl) (return (cons fl (cdr f_list)))))
+		(F_add func (car f_list) (lambda (fl) (return_f (cons fl (cdr f_list)))))
 	))
 
 (define F_get
