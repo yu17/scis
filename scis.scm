@@ -3,7 +3,7 @@
 
 ;Value function. Keeps the literals and convert the variables to literals.
 (define eval_expr_symbol
-	(lambda (expr env return_v)
+	(lambda (expr env c-return c-break c-continue c-throw return_v)
 		(cond
 			((or (number? expr)
 				(boolean? expr)) (return_v expr))
@@ -14,10 +14,10 @@
 
 ;Value function. Call eval_expr_auto on the operands first and then return the sum of the results.
 (define eval_expr_add
-	(lambda (operands env return_v)
-		(eval_expr_auto (car operands) env (lambda (v1)
-			(intpn_expr_auto (car operands) env (lambda (e)
-				(eval_expr_auto (cadr operands) e (lambda (v2)
+	(lambda (operands env c-return c-break c-continue c-throw return_v)
+		(eval_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (v1)
+			(intpn_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (e)
+				(eval_expr_auto (cadr operands) e c-return c-break c-continue c-throw (lambda (v2)
 					(if (not (and (number? v1) (number? v2)))
 						(error "Adding non-number values!")
 						(return_v (+ v1 v2)))
@@ -26,12 +26,12 @@
 
 ;Value function. Call eval_expr_auto on the operands first and then return the difference or the negation of the results.
 (define eval_expr_sub
-	(lambda (operands env return_v)
-		(eval_expr_auto (car operands) env (lambda (v1)
-			(intpn_expr_auto (car operands) env (lambda (e)
+	(lambda (operands env c-return c-break c-continue c-throw return_v)
+		(eval_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (v1)
+			(intpn_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (e)
 				(cond
 					((not (number? v1)) (error "Subtracting/Negating non-number values!"))
-					((not (null? (cdr operands))) (eval_expr_auto (cadr operands) e (lambda (v2)
+					((not (null? (cdr operands))) (eval_expr_auto (cadr operands) e c-return c-break c-continue c-throw (lambda (v2)
 						(if (not (number? v2))
 							(error "Subtracting non-number values!")
 							(return_v (- v1 v2)))
@@ -42,10 +42,10 @@
 
 ;Value function. Call eval_expr_auto on the operands first and then return the product of the results.
 (define eval_expr_mult
-	(lambda (operands env return_v)
-		(eval_expr_auto (car operands) env (lambda (v1)
-			(intpn_expr_auto (car operands) env (lambda (e)
-				(eval_expr_auto (cadr operands) e (lambda (v2)
+	(lambda (operands env c-return c-break c-continue c-throw return_v)
+		(eval_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (v1)
+			(intpn_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (e)
+				(eval_expr_auto (cadr operands) e c-return c-break c-continue c-throw (lambda (v2)
 					(if (not (and (number? v1) (number? v2)))
 						(error "Multiplying non-number values!")
 						(return_v (* v1 v2)))
@@ -54,10 +54,10 @@
 
 ;Value function. Call eval_expr_auto on the operands first and then return the difference of the results.
 (define eval_expr_div
-	(lambda (operands env return_v)
-		(eval_expr_auto (car operands) env (lambda (v1)
-			(intpn_expr_auto (car operands) env (lambda (e)
-				(eval_expr_auto (cadr operands) e (lambda (v2)
+	(lambda (operands env c-return c-break c-continue c-throw return_v)
+		(eval_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (v1)
+			(intpn_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (e)
+				(eval_expr_auto (cadr operands) e c-return c-break c-continue c-throw (lambda (v2)
 					(if (not (and (number? v1) (number? v2)))
 						(error "Dividing non-number values!")
 						(return_v (quotient v1 v2)))
@@ -66,10 +66,10 @@
 
 ;Value function. Call eval_expr_auto on the operands first and then return the modulation of the results.
 (define eval_expr_mod
-	(lambda (operands env return_v)
-		(eval_expr_auto (car operands) env (lambda (v1)
-			(intpn_expr_auto (car operands) env (lambda (e)
-				(eval_expr_auto (cadr operands) e (lambda (v2)
+	(lambda (operands env c-return c-break c-continue c-throw return_v)
+		(eval_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (v1)
+			(intpn_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (e)
+				(eval_expr_auto (cadr operands) e c-return c-break c-continue c-throw (lambda (v2)
 					(if (not (and (number? v1) (number? v2)))
 						(error "Dividing non-number values!")
 						(return_v (modulo v1 v2)))
@@ -78,12 +78,12 @@
 
 ;Value(boolean) function. Call eval_expr_auto on the operands first and then return the logic and of the results.
 (define eval_expr_and
-	(lambda (operands env return_v)
-		(eval_expr_auto (car operands) env (lambda (v1)
+	(lambda (operands env c-return c-break c-continue c-throw return_v)
+		(eval_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (v1)
 			(if (or (not v1) (equal? v1 0))
 				(return_v #f)
-				(intpn_expr_auto (car operands) env (lambda (e)
-					(eval_expr_auto (cadr operands) e (lambda (v2)
+				(intpn_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (e)
+					(eval_expr_auto (cadr operands) e c-return c-break c-continue c-throw (lambda (v2)
 						(return_v (and v2 (not (equal? v2 0))))
 					))))
 				)))
@@ -91,12 +91,12 @@
 
 ;Value(boolean) function. Call eval_expr_auto on the operands first and then return the logic or of the results.
 (define eval_expr_or
-	(lambda (operands env return_v)
-		(eval_expr_auto (car operands) env (lambda (v1)
+	(lambda (operands env c-return c-break c-continue c-throw return_v)
+		(eval_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (v1)
 			(if (and v1 (not (equal? v1 0)))
 				(return_v #t)
-				(intpn_expr_auto (car operands) env (lambda (e)
-					(eval_expr_auto (cadr operands) e (lambda (v2)
+				(intpn_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (e)
+					(eval_expr_auto (cadr operands) e c-return c-break c-continue c-throw (lambda (v2)
 						(return_v (not (or (not v2) (equal? v2 0))))
 					))))
 				)))
@@ -104,18 +104,18 @@
 
 ;Value(boolean) function. Call eval_expr_auto on the operand first and then return the logic not of the result.
 (define eval_expr_not
-	(lambda (operands env return_v)
-		(eval_expr_auto (car operands) env (lambda (v)
+	(lambda (operands env c-return c-break c-continue c-throw return_v)
+		(eval_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (v)
 			(return_v (or (not v) (equal? v 0)))
 		))
 	))
 
 ;Value(boolean) function. Call eval_expr_auto on the operands first and then return whether the results are equal.
 (define eval_expr_eq
-	(lambda (operands env return_v)
-		(eval_expr_auto (car operands) env (lambda (v1)
-			(intpn_expr_auto (car operands) env (lambda (e)
-				(eval_expr_auto (cadr operands) e (lambda (v2)
+	(lambda (operands env c-return c-break c-continue c-throw return_v)
+		(eval_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (v1)
+			(intpn_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (e)
+				(eval_expr_auto (cadr operands) e c-return c-break c-continue c-throw (lambda (v2)
 					(return_v (equal? v1 v2))
 				))))))
 	))
@@ -123,19 +123,19 @@
 ;Value(boolean) function. Call eval_expr_auto on the operands first and then return whether the results are not equal.
 (define eval_expr_neq
 	(lambda (operands env return_v)
-		(eval_expr_auto (car operands) env (lambda (v1)
-			(intpn_expr_auto (car operands) env (lambda (e)
-				(eval_expr_auto (cadr operands) e (lambda (v2)
+		(eval_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (v1)
+			(intpn_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (e)
+				(eval_expr_auto (cadr operands) e c-return c-break c-continue c-throw (lambda (v2)
 					(return_v (not (equal? v1 v2)))
 				))))))
 	))
 
 ;Value(boolean) function. Call eval_expr_auto on the operands first and then return whether the first result is less than the second one.
 (define eval_expr_lt
-	(lambda (operands env return_v)
-		(eval_expr_auto (car operands) env (lambda (v1)
-			(intpn_expr_auto (car operands) env (lambda (e)
-				(eval_expr_auto (cadr operands) e (lambda (v2)
+	(lambda (operands env c-return c-break c-continue c-throw return_v)
+		(eval_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (v1)
+			(intpn_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (e)
+				(eval_expr_auto (cadr operands) e c-return c-break c-continue c-throw (lambda (v2)
 					(if (not (and (number? v1) (number? v2)))
 						(error "Comparing non-number values!")
 						(return_v (< v1 v2)))
@@ -144,10 +144,10 @@
 
 ;Value(boolean) function. Call eval_expr_auto on the operands first and then return whether the first result is greater than the second one.
 (define eval_expr_gt
-	(lambda (operands env return_v)
-		(eval_expr_auto (car operands) env (lambda (v1)
-			(intpn_expr_auto (car operands) env (lambda (e)
-				(eval_expr_auto (cadr operands) e (lambda (v2)
+	(lambda (operands env c-return c-break c-continue c-throw return_v)
+		(eval_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (v1)
+			(intpn_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (e)
+				(eval_expr_auto (cadr operands) e c-return c-break c-continue c-throw (lambda (v2)
 					(if (not (and (number? v1) (number? v2)))
 						(error "Comparing non-number values!")
 						(return_v (> v1 v2)))
@@ -156,10 +156,10 @@
 
 ;;Value(boolean) function. Call eval_expr_auto on the operands first and then return whether the first result is less or equal to than the second one.
 (define eval_expr_le
-	(lambda (operands env return_v)
-		(eval_expr_auto (car operands) env (lambda (v1)
-			(intpn_expr_auto (car operands) env (lambda (e)
-				(eval_expr_auto (cadr operands) e (lambda (v2)
+	(lambda (operands env c-return c-break c-continue c-throw return_v)
+		(eval_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (v1)
+			(intpn_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (e)
+				(eval_expr_auto (cadr operands) e c-return c-break c-continue c-throw (lambda (v2)
 					(if (not (and (number? v1) (number? v2)))
 						(error "Comparing non-number values!")
 						(return_v (<= v1 v2)))
@@ -168,10 +168,10 @@
 
 ;Value(boolean) function. Call eval_expr_auto on the operands first and then return whether the first result is less than or equal to the second one.
 (define eval_expr_ge
-	(lambda (operands env return_v)
-		(eval_expr_auto (car operands) env (lambda (v1)
-			(intpn_expr_auto (car operands) env (lambda (e)
-				(eval_expr_auto (cadr operands) e (lambda (v2)
+	(lambda (operands env c-return c-break c-continue c-throw return_v)
+		(eval_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (v1)
+			(intpn_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (e)
+				(eval_expr_auto (cadr operands) e c-return c-break c-continue c-throw (lambda (v2)
 					(if (not (and (number? v1) (number? v2)))
 						(error "Comparing non-number values!")
 						(return_v (>= v1 v2)))
@@ -180,61 +180,62 @@
 
 ;Value function. Return the evaluation result of the value being assigned.
 (define eval_expr_assign
-	(lambda (operands env return_v)
-		(eval_expr_auto (cadr operands) env return_v)
+	(lambda (operands env c-return c-break c-continue c-throw return_v)
+		(eval_expr_auto (cadr operands) env c-return c-break c-continue c-throw return_v)
 	))
 
 ;The sorter function for all the value function. Choose the corresponding evaluation function according to the first atom in the expression and pass the arguments to that function.
 (define eval_expr_auto
-	(lambda (expr env return_v)
+	(lambda (expr env c-return c-break c-continue c-throw return_v)
 		(cond
-			((not (list? expr)) (eval_expr_symbol expr env return_v))
-			((equal? (car expr) '+) (eval_expr_add (cdr expr) env return_v))
-			((equal? (car expr) '-) (eval_expr_sub (cdr expr) env return_v))
-			((equal? (car expr) '*) (eval_expr_mult (cdr expr) env return_v))
-			((equal? (car expr) '/) (eval_expr_div (cdr expr) env return_v))
-			((equal? (car expr) '%) (eval_expr_mod (cdr expr) env return_v))
-			((equal? (car expr) '&&) (eval_expr_and (cdr expr) env return_v))
-			((equal? (car expr) (string->symbol "||")) (eval_expr_or (cdr expr) env return_v))
-			((equal? (car expr) '!) (eval_expr_not (cdr expr) env return_v))
-			((equal? (car expr) '==) (eval_expr_eq (cdr expr) env return_v))
-			((equal? (car expr) '!=) (eval_expr_neq (cdr expr) env return_v))
-			((equal? (car expr) '<) (eval_expr_lt (cdr expr) env return_v))
-			((equal? (car expr) '>) (eval_expr_gt (cdr expr) env return_v))
-			((equal? (car expr) '<=) (eval_expr_le (cdr expr) env return_v))
-			((equal? (car expr) '>=) (eval_expr_ge (cdr expr) env return_v))
-			((equal? (car expr) '=) (eval_expr_assign (cdr expr) env return_v))
+			((not (list? expr)) (eval_expr_symbol expr env c-return c-break c-continue c-throw return_v))
+			((equal? (car expr) '+) (eval_expr_add (cdr expr) env c-return c-break c-continue c-throw return_v))
+			((equal? (car expr) '-) (eval_expr_sub (cdr expr) env c-return c-break c-continue c-throw return_v))
+			((equal? (car expr) '*) (eval_expr_mult (cdr expr) env c-return c-break c-continue c-throw return_v))
+			((equal? (car expr) '/) (eval_expr_div (cdr expr) env c-return c-break c-continue c-throw return_v))
+			((equal? (car expr) '%) (eval_expr_mod (cdr expr) env c-return c-break c-continue c-throw return_v))
+			((equal? (car expr) '&&) (eval_expr_and (cdr expr) env c-return c-break c-continue c-throw return_v))
+			((equal? (car expr) (string->symbol "||")) (eval_expr_or (cdr expr) env c-return c-break c-continue c-throw return_v))
+			((equal? (car expr) '!) (eval_expr_not (cdr expr) env c-return c-break c-continue c-throw return_v))
+			((equal? (car expr) '==) (eval_expr_eq (cdr expr) env c-return c-break c-continue c-throw return_v))
+			((equal? (car expr) '!=) (eval_expr_neq (cdr expr) env c-return c-break c-continue c-throw return_v))
+			((equal? (car expr) '<) (eval_expr_lt (cdr expr) env c-return c-break c-continue c-throw return_v))
+			((equal? (car expr) '>) (eval_expr_gt (cdr expr) env c-return c-break c-continue c-throw return_v))
+			((equal? (car expr) '<=) (eval_expr_le (cdr expr) env c-return c-break c-continue c-throw return_v))
+			((equal? (car expr) '>=) (eval_expr_ge (cdr expr) env c-return c-break c-continue c-throw return_v))
+			((equal? (car expr) '=) (eval_expr_assign (cdr expr) env c-return c-break c-continue c-throw return_v))
+			((equal? (car expr) 'funcall) (eval_funcall (cdr expr) env c-return c-break c-continue c-throw return_v))
 			(else (error (string-append "Invalid operator " (symbol->string (car expr)) "."))))
 	))
 
 ;The dummy function that converts the results of the value functions to booleans.
 (define bool_expr_auto
-	(lambda (expr env return_b)
-		(eval_expr_auto expr env (lambda (v)
+	(lambda (expr env c-return c-break c-continue c-throw return_b)
+		(eval_expr_auto expr env c-return c-break c-continue c-throw (lambda (v)
 			(return_b (and v (not (equal? v 0))))
 		))
 	))
 
 ;env function. Used for all non-assignment expressions. Return the new env after interpreting the operands.
 (define intpn_expr_noeffectoperator
-	(lambda (operands env return_e)
-		(intpn_expr_auto (car operands) env (lambda (e)
+	(lambda (operands env c-return c-break c-continue c-throw return_e)
+		(intpn_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (e)
 			(if (not (null? (cdr operands)))
-				(intpn_expr_auto (cadr operands) e return_e)
-				(return_e s))))
+				(intpn_expr_auto (cadr operands) e c-return c-break c-continue c-throw return_e)
+				(return_e e))))
 	))
 
 ;env function. Used for the assignment expression. Return the new env after the assignment.
 (define intpn_expr_assign
 	(lambda (operands env return_e)
-		(eval_expr_auto (cadr operands) env (lambda (v)
-			(intpn_expr_auto (cadr operands) env (lambda (e)
+		(eval_expr_auto (cadr operands) env c-return c-break c-continue c-throw (lambda (v)
+			(intpn_expr_auto (cadr operands) env c-return c-break c-continue c-throw (lambda (e)
 				(EL_SL_set (list (car operands) v) e return_e)))))
 	))
 		
 ;env function. The sorter function for the env function of the expressions.
 (define intpn_expr_auto
-	(lambda (expr env return_e)
+	(lambda (expr env c-return c-break c-continue c-throw return_e)
 		(cond
 			((not (list? expr)) (return_e env))
 			((or (equal? (car expr) '+)
@@ -250,8 +251,9 @@
 				(equal? (car expr) '<)
 				(equal? (car expr) '>)
 				(equal? (car expr) '<=)
-				(equal? (car expr) '>=)) (intpn_expr_noeffectoperator (cdr expr) env return_e))
-			((equal? (car expr) '=) (intpn_expr_assign (cdr expr) env return_e)))
+				(equal? (car expr) '>=)) (intpn_expr_noeffectoperator (cdr expr) env c-return c-break c-continue c-throw return_e))
+			((equal? (car expr) '=) (intpn_expr_assign (cdr expr) env c-return c-break c-continue c-throw return_e))
+			((equal? (car expt) 'funcall) (intpn_funcall (cdr expr) env c-return c-break c-continue c-throw return_e))
 	))
 
 ;env function. Process the declaration.
@@ -294,8 +296,10 @@
 
 ;Value function. Process the return envment and calls c-return to return.
 (define intpn_return
-	(lambda (stmt env c-return)
-		(eval_expr_auto (car stmt) env c-return)
+	(lambda (stmt env c-return return_e)
+		(if (null? c-return)
+			(return_e env)
+			(eval_expr_auto (car stmt) env c-return))
 	))
 
 ;env function. Process the envment blocks. Creates a new layer when entering the block and remove it when leaving. It also adds a intermediate function to c-throw that removes a layer so that when throw is called in side a code block, the env layer is still properly removed.
@@ -374,6 +378,51 @@
 				(EL_popLayer e2 return_e)))))
 	))
 
+(define intpn_function
+	(lambda (stmt env c-return c-break c-continue c-throw return_e)
+		(if (equal? (car stmt) 'main)
+			(EL_FL_add stmt env (lambda (e)
+				(eval_funcall '(main) e '() c-break c-continue c-throw c-return)))
+			(EL_FL_add stmt env return_e))
+	))
+
+(define intpn_funcall_arglist
+	(lambda (formals actuals env c-return c-break c-continue c-throw return_e)
+		(cond
+			((and (null? formals) (null? actuals)) (return_e env))
+			((or (null? formals) (null? actuals)) (error "Invalid function call. Too many or few arguments."))
+			(eval_expr_auto (car actuals) env c-return c-break c-continue c-throw (lambda (v)
+				(intpn_expr_auto (car actuals) env c-return c-break c-continue c-throw (lambda (e)
+					(EL_SL_add (list (car formals) v) e (lambda (e2)
+						(intpn_funcall_arglist (cdr formals) (cdr actuals) e2 c-return c-break c-continue c-throw return_e)))
+				))
+			))
+		)
+	))
+
+;env function. funcall
+(define intpn_funcall
+	(lambda (stmt env c-return c-break c-continue c-throw return_e)
+		(EL_pushLayer env (lambda (e)
+			(EL_FL_get (car stmt) (lambda (f)
+				(intpn_funcall_arglist (car f) (cdr stmt) e c-return c-break c-continue c-throw (lambda (e2)
+					(intpn_stmt_auto (cadr f) e2 '() c-break c-continue c-throw return_e)
+				))
+			))
+		))
+	))
+
+(define eval_funcall
+	(lambda (stmt env c-return c-break c-continue c-throw return_v)
+		(EL_pushLayer env (lambda (e)
+			(EL_FL_get (car stmt) (lambda (f)
+				(intpn_funcall_arglist (car f) (cdr stmt) e c-return c-break c-continue c-throw (lambda (e2)
+					(intpn_stmt_auto (cadr f) e2 return_v c-break c-continue c-throw missing_return)
+				))
+			))
+		))
+	))
+
 ;The main sorter function of the interpreter. Takes the result from the parser and execute them with the appropriate interpretation functions.
 (define intpn_stmt_auto
 	(lambda (stmt env c-return c-break c-continue c-throw return_e)
@@ -385,13 +434,15 @@
 			((equal? (car stmt) 'var) (intpn_var (cdr stmt) env return_e))
 			((equal? (car stmt) 'if) (intpn_if (cdr stmt) env c-return c-break c-continue c-throw return_e))
 			((equal? (car stmt) 'while) (intpn_while (cdr stmt) env c-return c-break c-continue c-throw return_e))
-			((equal? (car stmt) 'return) (intpn_return (cdr stmt) env c-return))
+			((equal? (car stmt) 'return) (intpn_return (cdr stmt) env c-return return_e))
 			((equal? (car stmt) 'begin) (intpn_begin (cdr stmt) env c-return c-break c-continue c-throw return_e))
 			((equal? (car stmt) 'break) (intpn_break env c-break))
 			((equal? (car stmt) 'continue) (intpn_continue env c-continue))
 			((equal? (car stmt) 'try) (intpn_try (cdr stmt) env c-return c-break c-continue c-throw return_e))
 			((equal? (car stmt) 'throw) (intpn_throw (cdr stmt) env c-throw))
-			(else (intpn_expr_auto stmt env return_e))
+			((equal? (car stmt) 'function) (intpn_function (cdr stmt) env c-return c-break c-continue c-throw return_e))
+			((equal? (car stmt) 'funcall) (intpn_funcall (cdr stmt) env c-return c-break c-continue c-throw return_e))
+			(else (intpn_expr_auto stmt env c-return c-break c-continue c-throw return_e))
 		)
 	))
 
@@ -403,6 +454,11 @@
 (define invalid_throw
 	(lambda (dummy1 dummy2)
 		(error "Invalid throw instruction.")
+	))
+
+(define missing_return
+	(lambda (dummy)
+		(error "Missing return statment.")
 	))
 
 ;Load the sample parser

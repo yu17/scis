@@ -135,27 +135,6 @@
 		(FL_pushLayer '() return_f)
 	))
 
-(define F_get
-	(lambda (fname f_layer return_f)
-		(cond
-			((null? f_layer) (return_f '()))
-			((equal? (caar f_layer) fname) (return_f (car f_layer)))
-			(else (F_get fname (cdr f_layer) return_f))
-		)
-	))
-
-(define FL_get
-	(lambda (fname f_list return_f)
-		(if (null? f_list)
-			(error (string-append "The function " (symbol->string fname) " is not defined."))
-			(F_get fname (car f_list) (lambda (f)
-				(if (null? f)
-					(FL_get fname (cdr f_list) return_f)
-					(return_f f))
-			))
-		)
-	))
-
 (define F_check
 	(lambda (fname f_layer return_b)
 		(cond
@@ -176,6 +155,27 @@
 (define FL_add
 	(lambda (func f_list return_f)
 		(F_add func (car f_list) (lambda (fl) (return (cons fl (cdr f_list)))))
+	))
+
+(define F_get
+	(lambda (fname f_layer return_f)
+		(cond
+			((null? f_layer) (return_f '()))
+			((equal? (caar f_layer) fname) (return_f (cdar f_layer)))
+			(else (F_get fname (cdr f_layer) return_f))
+		)
+	))
+
+(define FL_get
+	(lambda (fname f_list return_f)
+		(if (null? f_list)
+			(error (string-append "The function " (symbol->string fname) " is not defined."))
+			(F_get fname (car f_list) (lambda (f)
+				(if (null? f)
+					(FL_get fname (cdr f_list) return_f)
+					(return_f f))
+			))
+		)
 	))
 
 (define EL_pushLayer
@@ -220,3 +220,12 @@
 		(SL_set varpair (car e_list) (lambda (sl) (return_e (cons sl (cdr e_list)))))
 	))
 
+(define EL_FL_add
+	(lambda (func e_list return_e)
+		(FL_add func (cadr e_list) (lambda (fl) (return_e (list (car e_list) fl))))
+	))
+
+(define EL_FL_get
+	(lambda (fname e_list return_f)
+		(FL_get fname (cadr e_list) return_f)
+	))
