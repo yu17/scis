@@ -1,9 +1,12 @@
-;EECS 345 Interpreter Project Part 2
-;Group 39. Jiaqi Yu, Yiquan Zhu, Renjie Xi
+;EECS 345 Interpreter Project Part 3
+;Group 38. Jiaqi Yu, Yiquan Zhu, Renjie Xi
+
+;For detailed explanation on the implementation, please refer to readme.md.
 
 ;Value function. Keeps the literals and convert the variables to literals.
 (define eval_expr_symbol
 	(lambda (expr env c-return c-break c-continue c-throw return_v)
+
 		(cond
 			((or (number? expr)
 				(boolean? expr)) (return_v expr))
@@ -122,7 +125,7 @@
 
 ;Value(boolean) function. Call eval_expr_auto on the operands first and then return whether the results are not equal.
 (define eval_expr_neq
-	(lambda (operands env return_v)
+	(lambda (operands env c-return c-break c-continue c-throw return_v)
 		(eval_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (v1)
 			(intpn_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (e)
 				(eval_expr_auto (cadr operands) e c-return c-break c-continue c-throw (lambda (v2)
@@ -216,7 +219,7 @@
 		))
 	))
 
-;env function. Used for all non-assignment expressions. Return the new env after interpreting the operands.
+;State function. Used for all non-assignment expressions. Return the new env after interpreting the operands.
 (define intpn_expr_noeffectoperator
 	(lambda (operands env c-return c-break c-continue c-throw return_e)
 		(intpn_expr_auto (car operands) env c-return c-break c-continue c-throw (lambda (e)
@@ -225,7 +228,7 @@
 				(return_e e))))
 	))
 
-;env function. Used for the assignment expression. Return the new env after the assignment.
+;State function. Used for the assignment expression. Return the new env after the assignment.
 (define intpn_expr_assign
 	(lambda (operands env c-return c-break c-continue c-throw return_e)
 		(eval_expr_auto (cadr operands) env c-return c-break c-continue c-throw (lambda (v)
@@ -233,7 +236,7 @@
 				(EL_SL_set (list (car operands) v) e return_e)))))
 	))
 		
-;env function. The sorter function for the env function of the expressions.
+;State function. The sorter function for the State function of the expressions.
 (define intpn_expr_auto
 	(lambda (expr env c-return c-break c-continue c-throw return_e)
 		(cond
@@ -253,11 +256,11 @@
 				(equal? (car expr) '<=)
 				(equal? (car expr) '>=)) (intpn_expr_noeffectoperator (cdr expr) env c-return c-break c-continue c-throw return_e))
 			((equal? (car expr) '=) (intpn_expr_assign (cdr expr) env c-return c-break c-continue c-throw return_e))
-			((equal? (car expt) 'funcall) (intpn_funcall (cdr expr) env c-return c-break c-continue c-throw return_e))
+			((equal? (car expr) 'funcall) (intpn_funcall (cdr expr) env c-return c-break c-continue c-throw return_e))
 		)
 	))
 
-;env function. Process the declaration.
+;State function. Process the declaration.
 (define intpn_var
 	(lambda (stmt env c-return c-break c-continue c-throw return_e)
 		(if (null? (cdr stmt))
@@ -267,7 +270,7 @@
 					(EL_SL_add (list (car stmt) v) e return_e)))))
 		)))
 
-;env function. Process the if envment.
+;State function. Process the if envment.
 (define intpn_if
 	(lambda (stmt env c-return c-break c-continue c-throw return_e)
 		(bool_expr_auto (car stmt) env c-return c-break c-continue c-throw (lambda (b)
@@ -279,14 +282,15 @@
 				)))))
 	))
 
-;env function. Process the while envment.
+;State function. Process the while envment.
 ;Creates the c-break (which is essentially the return_e, which points to the caller before the loop) and the c-continue (which is essentially running the next loop) continuations. 
 (define intpn_while
 	(lambda (stmt env c-return c-break c-continue c-throw return_e)
 		(bool_expr_auto (car stmt) env c-return c-break c-continue c-throw (lambda (b)
 			(intpn_expr_auto (car stmt) env c-return c-break c-continue c-throw (lambda (e)
 				(if b
-					(intpn_stmt_auto (cadr stmt) e c-return
+					(intpn_stmt_auto (cadr stmt) e
+						c-return
 						return_e
 						(lambda (e2) (intpn_while stmt e2 c-return c-break c-continue c-throw return_e))
 						c-throw
@@ -295,52 +299,60 @@
 			)))
 	))
 
-;Value function. Process the return envment and calls c-return to return.
+;Value function. Process the return expression and its side effects on the state and calls c-return to return.
 (define intpn_return
 	(lambda (stmt env c-return c-break c-continue c-throw return_e)
-		(if (null? c-return)
-			(return_e env)
-			(eval_expr_auto (car stmt) env c-return c-break c-continue c-throw c-return))
+		(eval_expr_auto (car stmt) env c-return c-break c-continue c-throw (lambda (v)
+			(intpn_expr_auto (car stmt) env c-return c-break c-continue c-throw (lambda (e)
+				(c-return e v)))
+		))
 	))
 
-;env function. Process the envment blocks. Creates a new layer when entering the block and remove it when leaving. It also adds a intermediate function to c-throw that removes a layer so that when throw is called in side a code block, the env layer is still properly removed.
+;State function. Process the envment blocks. Creates a new layer when entering the block and remove it when leaving. It also adds a intermediate function to c-throw that removes a layer so that when throw is called in side a code block, the env layer is still properly removed.
 (define intpn_begin
 	(lambda (stmt env c-return c-break c-continue c-throw return_e)
 		(EL_pushLayer env (lambda (e)
-			(intpn_stmt_auto stmt e c-return c-break c-continue
-			(lambda (e2 err)
-				(EL_popLayer e2 (lambda (e3) (c-throw e3 err))))
-			(lambda (e2)
-				(EL_popLayer e2 return_e)))))
+			(intpn_stmt_auto stmt e
+				(lambda (e2 v) (EL_popLayer e2 (lambda (e3) (c-return e3 v))))
+				(lambda (e2) (EL_popLayer e2 c-break))
+				(lambda (e2) (EL_popLayer e2 c-continue))
+				(lambda (e2 err)
+					(EL_popLayer e2 (lambda (e3) (c-throw e3 err))))
+				(lambda (e2)
+					(EL_popLayer e2 return_e)))))
 	))
 
-;Goto function. Remove a env layer and calls c-break.
+;Goto function. Calls c-break.
 (define intpn_break
 	(lambda (env c-break)
-		(EL_popLayer env c-break)
+		(c-break env)
 	))
 
-;Goto function. Remove a env layer and calls c-continue.
+;Goto function. Calls c-continue.
 (define intpn_continue
 	(lambda (env c-continue)
-		(EL_popLayer env c-continue)
+		(c-continue env)
 	))
 
-;env function. Process the try block. Creates a new layer for the envment block, checks if catch and finally exist and execute them. When it is properly returned, a env layer is removed before executing finally. Otherwise, that layer is removed by the throw function.
+;State function. Process the try block. Creates a new layer for the envment block, checks if catch and finally exist and execute them. When it is properly returned, a env layer is removed before executing finally. Otherwise, that layer is removed by the throw function.
 (define intpn_try
 	(lambda (stmt env c-return c-break c-continue c-throw return_e)
 		(EL_pushLayer env (lambda (e)
-			(intpn_stmt_auto (car stmt) e c-return c-break c-continue
-				(lambda (e2 err)
+			(intpn_stmt_auto (car stmt) e
+				(lambda (e2 v) (EL_popLayer e2 (lambda (e3) (c-return e3 v))))
+				(lambda (e2) (EL_popLayer e2 c-break))
+				(lambda (e2) (EL_popLayer e2 c-continue))
+				(lambda (e2 err) (EL_popLayer e2 (lambda (e3)
 					(if (not (null? (cadr stmt)))
-						(intpn_catch (cdadr stmt) e2 err c-return c-break c-continue c-throw (lambda (e3)
+						(intpn_catch (cdadr stmt) e3 err c-return c-break c-continue c-throw (lambda (e4)
 							(if (not (null? (caddr stmt)))
-								(intpn_finally (cdaddr stmt) e3 c-return c-break c-continue c-throw return_e)
-								(return_e e3))
+								(intpn_finally (cdaddr stmt) e4 c-return c-break c-continue c-throw return_e)
+								(return_e e4))
 								))
 						(if (not (null? (caddr) stmt))
 							(intpn_finally (cdaddr stmt) e3 c-return c-break c-continue c-throw return_e)
-							(return_e e2))))
+							(return_e e3)))
+				)))
 				(lambda (e2) (EL_popLayer e2 (lambda (e3)
 					(if (not (null? (caddr stmt)))
 						(intpn_finally (cdaddr stmt) e3 c-return c-break c-continue c-throw return_e)
@@ -351,74 +363,114 @@
 						
 ;Goto function. Remove a env layer and calls c-throw.
 (define intpn_throw
-	(lambda (stmt env c-throw)
-		(EL_popLayer env (lambda (e) (c-throw e (car stmt))))
+	(lambda (stmt env c-return c-break c-continue c-throw return_e)
+		(eval_expr_auto (car stmt) env c-return c-break c-continue c-throw (lambda (v)
+			(intpn_expr_auto (car stmt) env c-return c-break c-continue c-throw (lambda (e)
+				(c-throw e v)))
+		))
 	))
 
-;env function. Similar to what the begin function do.
+;State function. Similar to what the begin function do.
 (define intpn_catch
 	(lambda (stmt env error c-return c-break c-continue c-throw return_e)
 		(EL_pushLayer env (lambda (e)
 			(EL_SL_add (list (caar stmt) error) e (lambda (e2)
-				(intpn_stmt_auto (cadr stmt) e2 c-return c-break c-continue
+				(intpn_stmt_auto (cadr stmt) e2
+				(lambda (e3 v) (EL_popLayer e3 (lambda (e4) (c-return e4 v))))
+				(lambda (e3) (EL_popLayer e3 c-break))
+				(lambda (e3) (EL_popLayer e3 c-continue))
 				(lambda (e3 err)
 					(EL_popLayer e3 (lambda (e4) (c-throw e4 err))))
 				(lambda (e3)
 					(EL_popLayer e3 return_e)))
-					))))
+			))
+		))
 	))
 
-;env function. Similar to what the begin function do.
+;State function. Similar to what the begin function do.
 (define intpn_finally
 	(lambda (stmt env c-return c-break c-continue c-throw return_e)
 		(EL_pushLayer env (lambda (e)
-			(intpn_stmt_auto (car stmt) e c-return c-break c-continue
+			(intpn_stmt_auto (car stmt) e
+			(lambda (e2 v) (EL_popLayer e2 (lambda (e3) (c-return e3 v))))
+			(lambda (e2) (EL_popLayer e2 c-break))
+			(lambda (e2) (EL_popLayer e2 c-continue))
 			(lambda (e2 err)
 					(EL_popLayer e2 (lambda (e3) (c-throw e3 err))))
 			(lambda (e2)
-				(EL_popLayer e2 return_e)))))
+				(EL_popLayer e2 return_e)))
+		))
 	))
 
+;State function. Add the function definition to the FunctionList stack. If the name of the function is 'main', it also calls evaluation on this function.
 (define intpn_function
 	(lambda (stmt env c-return c-break c-continue c-throw return_e)
 		(if (equal? (car stmt) 'main)
 			(EL_FL_add stmt env (lambda (e)
-				(eval_funcall '(main) e '() c-break c-continue c-throw c-return)))
+				(eval_funcall '(main) e (lambda (e2 v) (cond
+					((equal? v #t) 'true)
+					((equal? v #f) 'false)
+					(else v)))
+					c-break
+					c-continue
+					c-throw
+					(lambda (v) (cond
+					((equal? v #t) 'true)
+					((equal? v #f) 'false)
+					(else v)))
+					)
+					))
 			(EL_FL_add stmt env return_e))
 	))
 
+;State function. Receive the list of the formal arguments and the list of the actual arguments, and pushing them on to the StateList.
 (define intpn_funcall_arglist
 	(lambda (formals actuals env c-return c-break c-continue c-throw return_e)
 		(cond
 			((and (null? formals) (null? actuals)) (return_e env))
 			((or (null? formals) (null? actuals)) (error "Invalid function call. Too many or few arguments."))
-			(eval_expr_auto (car actuals) env c-return c-break c-continue c-throw (lambda (v)
+			(else (eval_expr_auto (car actuals) env c-return c-break c-continue c-throw (lambda (v)
 				(intpn_expr_auto (car actuals) env c-return c-break c-continue c-throw (lambda (e)
-					(EL_SL_add (list (car formals) v) e (lambda (e2)
-						(intpn_funcall_arglist (cdr formals) (cdr actuals) e2 c-return c-break c-continue c-throw return_e)))
+						(intpn_funcall_arglist (cdr formals) (cdr actuals) e c-return c-break c-continue c-throw (lambda (e2) (EL_SL_add (list (car formals) v) e2 return_e)))
 				))
-			))
+			)))
 		)
 	))
 
-;env function. funcall
+;State function. Interprets the function calls. Creates the execution environment for the function and call interpretation on the content of the function. Returns the result state after execution. Won't produce error even if the return statement is missing.
 (define intpn_funcall
 	(lambda (stmt env c-return c-break c-continue c-throw return_e)
 		(EL_pushLayer env (lambda (e)
 			(EL_FL_get (car stmt) env (lambda (f)
 				(intpn_funcall_arglist (car f) (cdr stmt) e c-return c-break c-continue c-throw (lambda (e2)
-					(intpn_stmt_auto (cadr f) e2 '() c-break c-continue c-throw return_e)
+					(EL_dump e2 (car stmt) (lambda (e3 de)
+						(intpn_stmt_auto (cadr f) e3
+							(lambda (e4 v) (EL_restore e4 de (lambda (e5) (EL_popLayer e5 return_e))))
+							(lambda (e4) (EL_restore e4 de (lambda (e5) (EL_popLayer e5 c-break))))
+							(lambda (e4) (EL_restore e4 de (lambda (e5) (EL_popLayer e5 c-continue))))
+							(lambda (e4 err) (EL_restore e4 de (lambda (e5) (EL_popLayer e5 (lambda (e6) (c-throw e6 err))))))
+							(lambda (e4) (EL_restore e4 de (lambda (e5) (EL_popLayer e5 return_e)))))
+					))
 				))
 			))
 		))
 	))
 
+;Value function. 
+;State function. Interprets the function calls. Creates the execution environment for the function and call interpretation on the content of the function. Uses c-return to return the value of the return statement. Throws an error if the return statement is not found at all.
 (define eval_funcall
 	(lambda (stmt env c-return c-break c-continue c-throw return_v)
 		(EL_pushLayer env (lambda (e)
 			(EL_FL_get (car stmt) env (lambda (f)
 				(intpn_funcall_arglist (car f) (cdr stmt) e c-return c-break c-continue c-throw (lambda (e2)
-					(intpn_stmt_auto (cadr f) e2 return_v c-break c-continue c-throw missing_return)
+					(EL_dump e2 (car stmt) (lambda (e3 de)
+						(intpn_stmt_auto (cadr f) e3
+						(lambda (e4 v) (return_v v))
+						(lambda (e4) (EL_restore e4 de (lambda (e5) (EL_popLayer e5 c-break))))
+						(lambda (e4) (EL_restore e4 de (lambda (e5) (EL_popLayer e5 c-continue))))
+						(lambda (e4 err) (EL_restore e4 de (lambda (e5) (EL_popLayer e5 (lambda (e6) (c-throw e6 err))))))
+						missing_return)
+					))
 				))
 			))
 		))
@@ -440,13 +492,14 @@
 			((equal? (car stmt) 'break) (intpn_break env c-break))
 			((equal? (car stmt) 'continue) (intpn_continue env c-continue))
 			((equal? (car stmt) 'try) (intpn_try (cdr stmt) env c-return c-break c-continue c-throw return_e))
-			((equal? (car stmt) 'throw) (intpn_throw (cdr stmt) env c-throw))
+			((equal? (car stmt) 'throw) (intpn_throw (cdr stmt) env c-return c-break c-continue c-throw c-throw))
 			((equal? (car stmt) 'function) (intpn_function (cdr stmt) env c-return c-break c-continue c-throw return_e))
 			((equal? (car stmt) 'funcall) (intpn_funcall (cdr stmt) env c-return c-break c-continue c-throw return_e))
 			(else (intpn_expr_auto stmt env c-return c-break c-continue c-throw return_e))
 		)
 	))
 
+;Error functions. Produces errors on invalid jumps.
 (define invalid_goto
 	(lambda (dummy)
 		(error "Invalid break or continue instruction.")
@@ -463,7 +516,7 @@
 	))
 
 (define missing_main
-	(lambda (dummy)
+	(lambda (dummy1 dummy2)
 		(error "Missing main function.")
 	))
 
@@ -478,13 +531,10 @@
 	(lambda (fname)
 		(EL_init (lambda (e)
 			(intpn_stmt_auto (parser fname) e
-				(lambda (v) (cond
-					((equal? v #t) 'true)
-					((equal? v #f) 'false)
-					(else v)))
+				missing_main
 				invalid_goto
 				invalid_goto
 				invalid_throw
-				missing_main)
+				missing_return)
 		))
 	))

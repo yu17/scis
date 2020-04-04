@@ -1,5 +1,7 @@
-; StateList functions
-; Following functions of which the names are prefixed with "SL" are the state operation functions.
+;For detailed explanation on the implementation, please refer to readme.md.
+
+;StateList functions
+;Following functions of which the names are prefixed with "SL" are the state stack operation functions.
 
 ;state,list
 (define SL_pushLayer
@@ -120,6 +122,8 @@
 			))))
 	))
 
+;FunctionList funcctions
+;Following functions of which the names are prefixzed with "FL" are the function stack operation functions.
 (define FL_pushLayer
 	(lambda (f_list return_f)
 		(return_f (cons '() f_list))
@@ -175,6 +179,73 @@
 					(FL_get fname (cdr f_list) return_f)
 					(return_f f))
 			))
+		)
+	))
+
+;EnvironmentList functions
+;Following functions of which the names are prefixed with "EL" are the wrapper functions for the Statestack and the Functionstack.
+(define EL_dumper
+	(lambda (e_list de_list fname return_e_de)
+		(F_check fname (caadr e_list) (lambda (b)
+		(if (not b)
+			(EL_dumper
+				(list
+					(cdar e_list)
+					(cdadr e_list))
+				(list
+					(cons (caar e_list) (car de_list))
+					(cons (caadr e_list) (cadr de_list)))
+				fname
+				return_e_de)
+			(return_e_de e_list de_list))
+		))
+	))
+
+(define EL_dump
+	(lambda (e_list fname return_e_de)
+
+			(EL_dumper
+				(list
+					(cdar e_list)
+					(cdadr e_list))
+				'(() ())
+				fname
+				(lambda (e de)
+					(return_e_de
+						(list
+							(cons (caar e_list) (car e))
+							(cons (caadr e_list) (cadr e)))
+						de)))
+		
+	))
+		
+
+(define EL_restorer
+	(lambda (e_list de_list return_e)
+		(if (not (null? (cadr de_list)))
+			(EL_restorer
+				(list
+					(cons (caar de_list) (car e_list))
+					(cons (caadr de_list) (cadr e_list)))
+				(list
+					(cdar de_list)
+					(cdadr de_list))
+				return_e)
+			(return_e e_list))
+	))
+
+(define EL_restore
+	(lambda (e_list de_list return_e)
+		(EL_restorer
+			(list
+				(cdar e_list)
+				(cdadr e_list))
+			de_list
+			(lambda (e)
+				(return_e
+					(list
+					(cons (caar e_list) (car e))
+					(cons (caadr e_list) (cadr e)))))
 		)
 	))
 
