@@ -1,6 +1,6 @@
 # EECS345_interpreter
 
-An Interpreter for a C-like language implemented in Scheme.
+A Simple Interpreter for a C-like language implemented in Scheme.
 
 All features, including the optional features, are implemented.
 

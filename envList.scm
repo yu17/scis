@@ -34,9 +34,10 @@
 ;bool
 (define SL_check
 	(lambda (varname s_list return_b)
-		(S_check varname (car s_list) (lambda (b) (if b
-			(return_b b)
-			(SL_check varname (cdr s_list) return_b)
+		(S_check varname (car s_list) (lambda (b) (cond
+			(b (return_b b))
+			((null? (cdr s_list)) (return_b b))
+			(else (SL_check varname (cdr s_list) return_b))
 		)))
 	))
 
@@ -184,11 +185,11 @@
 
 ;EnvironmentList functions
 ;Following functions of which the names are prefixed with "EL" are the wrapper functions for the Statestack and the Functionstack.
-(define EL_dumper
+(define EL_Fdumper
 	(lambda (e_list de_list fname return_e_de)
 		(F_check fname (caadr e_list) (lambda (b)
 		(if (not b)
-			(EL_dumper
+			(EL_Fdumper
 				(list
 					(cdar e_list)
 					(cdadr e_list))
@@ -201,10 +202,9 @@
 		))
 	))
 
-(define EL_dump
+(define EL_Fdump
 	(lambda (e_list fname return_e_de)
-
-			(EL_dumper
+			(EL_Fdumper
 				(list
 					(cdar e_list)
 					(cdadr e_list))
@@ -216,14 +216,13 @@
 							(cons (caar e_list) (car e))
 							(cons (caadr e_list) (cadr e)))
 						de)))
-		
 	))
 		
 
-(define EL_restorer
+(define EL_Frestorer
 	(lambda (e_list de_list return_e)
 		(if (not (null? (cadr de_list)))
-			(EL_restorer
+			(EL_Frestorer
 				(list
 					(cons (caar de_list) (car e_list))
 					(cons (caadr de_list) (cadr e_list)))
@@ -234,9 +233,9 @@
 			(return_e e_list))
 	))
 
-(define EL_restore
+(define EL_Frestore
 	(lambda (e_list de_list return_e)
-		(EL_restorer
+		(EL_Frestorer
 			(list
 				(cdar e_list)
 				(cdadr e_list))
@@ -247,6 +246,76 @@
 					(cons (caar e_list) (car e))
 					(cons (caadr e_list) (cadr e)))))
 		)
+	))
+
+(define EL_Sdumper
+	(lambda (e_list de_list varname return_e_de)
+		(S_check varname (caar e_list) (lambda (b)
+		(if (not b)
+			(EL_Sdumper
+				(list
+					(cdar e_list)
+					(cdadr e_list))
+				(list
+					(cons (caar e_list) (car de_list))
+					(cons (caadr e_list) (cadr de_list)))
+				varname
+				return_e_de)
+			(return_e_de e_list de_list))
+		))
+	))
+
+(define EL_Sdump
+	(lambda (e_list varname return_e_de)
+			(EL_Sdumper
+				e_list
+				'(() ())
+				varname
+				return_e_de)
+	))
+		
+
+(define EL_Srestorer
+	(lambda (e_list de_list return_e)
+		(if (not (null? (cadr de_list)))
+			(EL_Srestorer
+				(list
+					(cons (caar de_list) (car e_list))
+					(cons (caadr de_list) (cadr e_list)))
+				(list
+					(cdar de_list)
+					(cdadr de_list))
+				return_e)
+			(return_e e_list))
+	))
+
+(define EL_Srestore
+	(lambda (e_list de_list return_e)
+		(EL_Srestorer
+			e_list
+			de_list
+			return_e)
+	))
+
+(define EL_dumpone
+	(lambda (e_list return_e_do)
+		(return_e_do
+			(list
+				(cdar e_list)
+				(cdadr e_list))
+			(list
+				(caar e_list)
+				(caadr e_list))
+		)
+	))
+
+(define EL_restoreone
+	(lambda (e_list do_list return_e)
+		(return_e
+			(list
+				(cons (car do_list) (car e_list))
+				(cons (cadr do_list) (cadr e_list))
+			))
 	))
 
 (define EL_pushLayer
@@ -299,4 +368,60 @@
 (define EL_FL_get
 	(lambda (fname e_list return_f)
 		(FL_get fname (cadr e_list) return_f)
+	))
+
+(define EL_SL_check
+	(lambda (varname e_list return_b)
+		(SL_check varname (car e_list) return_b)
+	))
+
+(define EL_append
+	(lambda (e_list1 e_list2 return_e)
+		(return_e (list (append (car e_list1) (car e_list2)) (append (cadr e_list1) (cadr e_list2))))
+	))
+
+;ClassList data structure idea: (parent (static-var) (static-func) (var) (func))
+;Actual implementation: ( (name (parent) (static-EL) (EL)) ... )
+;When initializing instance, append (EL) from parent (and subsequent parents) to (EL) of itself
+
+(define CL_add
+	(lambda (c_list ClsMeta_name ClsMeta_ext ClsMeta_stat-env ClsMeta_env return_cl)
+		(return_cl (cons (list ClsMeta_name ClsMeta_ext ClsMeta_stat-env ClsMeta_env) c_list))
+	))
+
+(define CL_check
+	(lambda (cname c_list return_b)
+		(cond
+			((null? c_list) (return_b #f))
+			((equal? (caar c_list) cname) (return_b #t))
+			(else (CL_check cname (cdr c_list) return_b))
+		)
+	))
+
+(define CL_get
+	(lambda (cname c_list return_c)
+		(cond
+			((null? c_list) (error (string-append "The class " (symbol->string cname) " is not defined.")))
+			((equal? (caar c_list) cname) (return_c (cdar c_list)))
+			(else (CL_get cname (cdr c_list) return_c)))
+	))
+
+(define CL_set
+	(lambda (cname c_stat-env c_list return_cl)
+		(cond
+			((null? c_list) (return_cl c_list))
+			((equal? cname (caar c_list)) (return_cl (cons (list (caar c_list) (cadar c_list) c_stat-env (car (cdddar c_list))) (cdr c_list))))
+			(else (CL_set cname c_stat-env (cdr c_list) (lambda (cl)
+				(return_cl (cons (car c_list) cl)))
+			)))
+	))
+
+(define S_set
+	(lambda (varpair s_layer return_s)
+		(cond
+			((null? (car s_layer)) (return_s s_layer))
+			((equal? (car varpair) (caar s_layer)) (S_add varpair (list (cdar s_layer) (cdadr s_layer)) return_s))
+			(else (S_set varpair (list (cdar s_layer) (cdadr s_layer)) (lambda (s)
+				(S_add (list (caar s_layer) (caadr s_layer)) s return_s))))
+		)
 	))
