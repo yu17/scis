@@ -34,11 +34,13 @@
 ;bool
 (define SL_check
 	(lambda (varname s_list return_b)
-		(S_check varname (car s_list) (lambda (b) (cond
-			(b (return_b b))
-			((null? (cdr s_list)) (return_b b))
-			(else (SL_check varname (cdr s_list) return_b))
-		)))
+		(if (null? s_list)
+			(return_b #f)
+			(S_check varname (car s_list) (lambda (b) (cond
+				(b (return_b b))
+				((null? (cdr s_list)) (return_b b))
+				(else (SL_check varname (cdr s_list) return_b))
+			))))
 	))
 
 ;state,layer
@@ -60,8 +62,8 @@
 (define S_rm
 	(lambda (varname s_layer return_s)
 		(cond
-			((null? (car s_layer)) return_s(s_layer))
-			((equal? varname (caar s_layer)) (return_s (list (cdar s_list) (cdadr s_list))))
+			((null? (car s_layer)) (return_s s_layer))
+			((equal? varname (caar s_layer)) (return_s (list (cdar s_layer) (cdadr s_layer))))
 			(else (S_rm varname (list (cdar s_layer) (cdadr s_layer)) (lambda (v) 
 				(S_add (list (caar s_layer) (caadr s_layer)) v return_s))
 			))
@@ -358,6 +360,11 @@
 (define EL_SL_set
 	(lambda (varpair e_list return_e)
 		(SL_set varpair (car e_list) (lambda (sl) (return_e (cons sl (cdr e_list)))))
+	))
+
+(define EL_SL_rm
+	(lambda (varname e_list return_e)
+		(SL_rm varname (car e_list) (lambda (sl) (return_e (cons sl (cdr e_list)))))
 	))
 
 (define EL_FL_add
