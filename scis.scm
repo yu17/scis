@@ -674,6 +674,7 @@
 			(else (error (string-append "Unknown dot exiting routine operand " (symbol->string denv) "."))))
 	))
 
+;Move the top layer of one env onto another. Used after resolving the argument list of function call, so as to move the resolved list of arguments onto the environment of the class instance on which the function is executed.
 (define intpn_dot_func_transfer_toplayer
 	(lambda (env e_func return_e)
 		(EL_dumpone e_func (lambda (dummy top_cache)
@@ -682,6 +683,7 @@
 	))
 
 ;To retain the child class information when super member is called, we save a copy of the top layer of the env (i.e. the child class layer) into the super class env, so that it could be expanded when 'this is called in the future.
+;All the following four functions are the workaround so that we are able to refer to the runtime type when 'this' is referred to in a super class function.
 (define intpn_dot_func_warp_top
 	(lambda (env return_e)
 		(EL_SL_add (list '__SCIS_COLLAPSED_THIS (list (caar env) (caadr env))) (list (cdar env) (cdadr env)) return_e)
@@ -718,6 +720,7 @@
 		))
 	))
 
+;Handles the dot operator when used in assignment/expression evaluation.
 (define intpn_dot_var
 	(lambda (stmt env clis c-return c-break c-continue c-throw return_e)
 		(if (list? (car stmt))
@@ -750,7 +753,7 @@
 		))
 	))
 
-;handles both static and none-static declaration
+;Handles assignment on declaration of variables in classes.
 (define intpn_class_var
 	(lambda (stmt env return_e)
 		(if (null? (cdr stmt))
@@ -765,6 +768,7 @@
 		(EL_FL_add stmt env return_e)
 	))
 
+;Extracts the functions and variables in the class definition and build the corresponding EnvironmentList structure.
 (define intpn_class_builder
 	(lambda (stmt clis ClsMeta_name ClsMeta_ext stat-env env return_cl)
 		(cond

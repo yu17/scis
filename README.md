@@ -7,7 +7,7 @@ All features, including the optional features, are implemented.
 ## Usage:
 
 The main interpreter program file is `scis.scm`. It's a scheme flavor implementation. Requires `mit-scheme` to be installed.<br/>
-The provided parser `functionParser.scm` has been modified so as to be run under `mit-scheme`.<br/>
+The provided parser `classParser.scm` has been modified so as to be run under `mit-scheme`.<br/>
 
 To run `scis.scm`:
 
@@ -16,11 +16,11 @@ Enter the mit-scheme interactive environment. (Run mit-scheme)<br/>
 Execute the following command:<br/>
 
 (load "scis.scm")<br/>
-(interpret `<filename>`)<br/>
+(interpret `<filename>` `<mainclass>`)<br/>
 
 Or, open a terminal and navigate to the folder where the program is in, and execute:<br>
 
-mit-scheme --load scis.scm --eval "(interpret `<filename>`)"
+mit-scheme --load scis.scm --eval "(interpret `<filename>` `<mainclass>`)"
 
 #### Features:<br/>
 Variables types: integer, boolean, string<br/>
@@ -38,6 +38,14 @@ Inline assignment (nested assignment and assignment within expression)<br/>
 Instructions: var, if, while, return, begin, break, continue, try, catch, finally, throw, function.
 
 #### Implementation:<br/>
+
+In part 4, class interpretation is introduced, and therefore instead of looking for 'main' function on-the-fly, we now first read and import all the classes into the new data structure - ClassList, and then look for and execute the 'main' function in the class provided by the command-line options. The ClassList is then passed around together with the EnvironmentList, which stores the variables, so that the 'new' command, when been interpreted, could always refer to the ClassList to build new instance of certain classes.
+
+As for the 'dot' command, it's a little bit tricky because it is not only a look-up function, but also involves saving the running result back to the left operand in many cases. To achieve this save-back functionality, observing that it would only be called within either a 'funcall' or an assignment, we modify the code wherever 'dot' may be called so that when we met 'dot', we execute two code snippets, one before the 'funcall' or assignment, and one after that. (See comments for more details.)
+
+---
+Below are the implementation details of the part 3 update:
+
 First of all, the implementation of the state machine has been changed to hold two stacks, one for the variables and the other for the functions. The two stacks have their own operating functions, and the two stacks are wrapped together as an "Environment". The environment is controlled through the wrapper functions. (See below for the detail about the data structure.)
 
 The concept of "Environment" here is slightly different from what was defined in the assignment prompt. Here, we use "Environment simply to refer to the combination of the variable stack and the function stack. And we use a special technique to create proper execution environment for the functions.
